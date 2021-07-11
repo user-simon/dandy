@@ -1,0 +1,10 @@
+.git/
+.vs/
+Debug/
+Release/
+Packages/
+*.sln
+*.vcxproj
+*.filters
+*.user
+*.config
