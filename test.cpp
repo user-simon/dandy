@@ -80,8 +80,8 @@ TEST(math, arithmetic)
 
     // nonzero
     EXPECT_TRUE(a.nonzero());
-    EXPECT_FALSE((a - a).nonzero());
-
+    EXPECT_FALSE(int2d::zero.nonzero());
+    
     // scalar modifyers
     double2d b(-2.3, 4.5);
     EXPECT_EQ(b.abs(), double2d(2.3, 4.5));

@@ -590,6 +590,7 @@ namespace dd_impl
         using names_t = typename traits::names_t;
 
     public:
+        const static val_expr zero;
         T data[N];
 
         /*
@@ -664,6 +665,13 @@ DD_TYPE_DEFS(2);
 DD_TYPE_DEFS(3);
 DD_TYPE_DEFS(4);
 #endif
+
+/*
+ *  static member resolves
+*/
+
+template<class T, size_t N, bool ENABLE_NAMES>
+constexpr dandy_v<T, N, ENABLE_NAMES> dandy_v<T, N, ENABLE_NAMES>::zero;
 
 /*
  *  stl overloads and specializations
