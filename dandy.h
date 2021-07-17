@@ -55,12 +55,12 @@ private:                                         \
 public:
 
 // standard vector specialization definitions
-#define DD_NAME_DEFS(n, names)                                                         \
-    private:                                                                           \
-        using base = component_names<T, n - 1, true>;                                  \
-    public:                                                                            \
-       constexpr static char str_component_names[] = names;                            \
-       constexpr component_names& operator= (const component_names&) { return *this; }
+#define DD_NAME_DEFS(n, names)                                                        \
+    private:                                                                          \
+        using base = component_names<T, n - 1, true>;                                 \
+    public:                                                                           \
+       constexpr static char str_component_names[] = names;                           \
+       constexpr component_names& operator=(const component_names&) { return *this; }
 
 /*
  *  macros for defining operators
@@ -85,11 +85,15 @@ public:
     }
 
 // defines a unary expression operator
-#define DD_DEF_UN_OP(op)                                                   \
-    template<class T, class = std::enable_if_t<dd_traits::is_expr_v<T>>>   \
-    constexpr auto operator op (T& val)                                    \
-    {                                                                      \
-        return dd_impl::op_expr([](const auto& v) { return op(v); }, val); \
+#define DD_DEF_UN_OP(op)                                                 \
+    template<class T, class = std::enable_if_t<dd_traits::is_expr_v<T>>> \
+    constexpr auto operator op (const T& val)                            \
+    {                                                                    \
+        return dd_impl::op_expr                                          \
+        {                                                                \
+            [](const auto& v) { return op(v); },                         \
+            val                                                          \
+        };                                                               \
     }
 
 /*
@@ -110,7 +114,7 @@ public:
  *  arithmetic types
 */
 
-#ifndef DD_NO_TYPES
+#ifndef DD_NO_SCALAR_ALIASES
 using uint = unsigned int;
 using ulong = unsigned long;
 using uchar = unsigned char;
@@ -121,7 +125,7 @@ using byte = uchar;
  *  global settings
 */
 
-#ifdef DD_DISABLE_COMPONENT_NAMES
+#ifdef DD_NO_COMPONENT_NAMES
 constexpr bool DD_ENABLE_NAMES = false;
 #else
 constexpr bool DD_ENABLE_NAMES = true;
@@ -444,7 +448,7 @@ namespace dd_impl
         template<class FN>
         constexpr inline DD_EXPR_T apply(const FN& fn) const
         {
-            return op_expr{ fn, _this() };
+            return op_expr{ fn, std::move(_this()) };
         }
 
         DD_EXPR_T abs() const
@@ -473,7 +477,7 @@ namespace dd_impl
             return DD_APPLY_FN(S);
         }
     };
-
+    
     /*
      *  operation expression
      *    expressions involving an operation and at least one other
@@ -487,25 +491,25 @@ namespace dd_impl
     private:
         const std::tuple<ARGS...> _args;
         const OP& _op;
-
+        
         template<class T>
-        constexpr static inline scalar_t _get_value(const T& value, size_t i)
+        constexpr static inline scalar_t _get_index(const T& value, size_t i)
         {
-            if constexpr (dd_traits::is_expr_v<T>)
+            if constexpr(dd_traits::is_expr_v<T>)
                 return value[i];
             else
                 return value;
         }
-
+        
     public:
-        constexpr op_expr(const OP& op, const ARGS&... args)
+        constexpr op_expr(const OP& op, ARGS... args)
             : _op(op), _args(args...) {}
 
         constexpr inline scalar_t operator[](size_t i) const
         {
             auto eval_component = [&](const ARGS&... args)
             {
-                return _op(_get_value(args, i)...);
+                return _op(_get_index(args, i)...);
             };
             return std::apply(eval_component, _args);
         }
@@ -522,7 +526,7 @@ namespace dd_impl
             return eval();
         }
 
-        // serializes expression. forces evaluation
+        // serializes result of expression. forces evaluation
         std::string to_string(std::optional<std::string> name = {}) const
         {
             return eval().to_string(name);
@@ -530,7 +534,7 @@ namespace dd_impl
     };
 
     /*
-     *  named components
+     *  component names
      *    provides named components for val_expr. for performance
      *    reasons, can be disabled with ENABLE = false
     */
@@ -636,7 +640,7 @@ namespace dd_impl
 
             DD_LOOP(i)
             {
-                if constexpr (traits::has_named_components)
+                if constexpr(traits::has_named_components)
                     out += names_t::str_component_names[i];
                 else
                     out += std::to_string(i);
@@ -655,7 +659,7 @@ namespace dd_impl
 template<class T, size_t N, bool ENABLE_NAMES = DD_ENABLE_NAMES>
 using dandy_v = dd_impl::val_expr<T, N, ENABLE_NAMES>;
 
-#ifndef DD_DISABLE_VECTOR_TYPES
+#ifndef DD_NO_VECTOR_ALIASES
 DD_TYPE_DEFS(2);
 DD_TYPE_DEFS(3);
 DD_TYPE_DEFS(4);
