@@ -515,7 +515,7 @@ namespace dd_impl
         }
 
         // forces evaluation
-        constexpr value_t eval() const
+        constexpr value_t evaluate() const
         {
             return value_t(*this);
         }
@@ -523,13 +523,13 @@ namespace dd_impl
         // forces evaluation
         constexpr value_t operator*() const
         {
-            return eval();
+            return evaluate();
         }
 
         // serializes result of expression. forces evaluation
         std::string to_string(std::optional<std::string> name = {}) const
         {
-            return eval().to_string(name);
+            return evaluate().to_string(name);
         }
     };
 
@@ -604,14 +604,18 @@ namespace dd_impl
         template<class... ARGS, class = std::enable_if_t<sizeof...(ARGS) == N && std::conjunction_v<std::is_arithmetic<ARGS>...>>>
         constexpr val_expr(ARGS... args) : data{ (T)args... }, names_t(data) {}
 
-        // copy ctor - evaluate and copy values from a different expression
-        template<class E, class = std::enable_if_t<dd_traits::is_same_size_expr_v<val_expr, E>>>
-        constexpr val_expr(const E& expr) : names_t(data)
+        // copy ctor - copy values from an instance of the same expr
+        //   required explicitly to make sure names_t is initialized correctly
+        constexpr val_expr(const val_expr& e) : names_t(data)
         {
-            DD_LOOP(i)
-            {
-                data[i] = (T)expr[i];
-            }
+            evaluate(e);
+        }
+
+        // expr ctor - evaluate or copy values from a different expression
+        template<class E, class = std::enable_if_t<dd_traits::is_same_size_expr_v<val_expr, E>>>
+        constexpr val_expr(const E& e) : names_t(data)
+        {
+            evaluate(e);
         }
 
         /*
@@ -631,6 +635,16 @@ namespace dd_impl
         /*
          *  util
         */
+
+        DD_TEMPLATE_EXPR(E)
+        val_expr& evaluate(const E& e)
+        {
+            DD_LOOP(i)
+            {
+                data[i] = (T)e[i];
+            }
+            return *this;
+        }
 
         std::string to_string(std::optional<std::string> name = {}) const
         {
@@ -671,7 +685,7 @@ DD_TYPE_DEFS(4);
 */
 
 template<class T, size_t N, bool ENABLE_NAMES>
-constexpr dandy_v<T, N, ENABLE_NAMES> dandy_v<T, N, ENABLE_NAMES>::zero;
+const dandy_v<T, N, ENABLE_NAMES> dandy_v<T, N, ENABLE_NAMES>::zero;
 
 /*
  *  stl overloads and specializations
