@@ -115,7 +115,7 @@ NOTE: all operators require the argument vector expressions (if more than one) t
 ### Functions
 
 NOTE: `scalar_t` and `size` refer to the traits of the object on which the function is called (`*this`) and `other` serves as an alias for `vector<T, size>`
-| signature | description |
+| Function | Description |
 | --- | --- |
 | **Math functions:** | 
 | `sum` -> `scalar_t` | calculates the sum of the vector |
@@ -145,7 +145,7 @@ NOTE: `scalar_t` and `size` refer to the traits of the object on which the funct
 
 ### STL integration
   
-| function(s) | description |
+| Function(s) | Description |
 | --- | --- |
 | `std::ostream operator<<` | overload to serialize vector data |
 | `std::hash::operator()` | specialization to allow use as keys in std::unordered_* containers |
