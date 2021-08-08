@@ -21,8 +21,7 @@ The generic vector template is defined as `vector<[scalar type], [size]>` in nam
 ## Features
 
 ### Operators
-
-* all operators require the argument vector expressions (if more than one) to be of the same size
+NOTE: all operators require the argument vector expressions (if more than one) to be of the same size
 * the binary operators `+`, `-`, `*`, `/`, `%`, `&`, `|`, `^`, `>>`, `<<`, and their respective assignment counterparts are all overloaded for expressions of the pattern:
   ```cpp
   [vector expression] [operation] [vector expression]
@@ -73,7 +72,7 @@ The generic vector template is defined as `vector<[scalar type], [size]>` in nam
   
   int2d d = a; // error
   ```
-* [2D only] is constructable from an angle specified in radians:
+* **[2D only]** is constructable from an angle specified in radians:
   ```cpp
   float2d v = float2d::from_angle(0); // v contains 1, 0
   ```
@@ -115,13 +114,42 @@ The generic vector template is defined as `vector<[scalar type], [size]>` in nam
 
 ### Functions
 
-TODO: write documentation
-  
+NOTE: `scalar_t` and `size` refer to the traits of the object on which the function is called (`*this`) and `other` serves as an alias for `vector<T, size>`
+| signature | description |
+| --- | --- |
+| **Math functions:** | 
+| `sum` -> `scalar_t` | calculates the sum of the vector |
+| `product` -> `scalar_t` | calculates the product of the vector |
+| `nonzero` -> `bool` | true iff all components are 0 |
+| `dot(other)` -> `scalar_t` | calculates the dot product with `other`. |
+| `length2` -> `scalar_t` | calculates the length squared |
+| `length` -> `double` | calculates the length. Equivalent to `std::sqrt(length2())` |
+| `distance2(other)` -> `scalar_t` | calculates the distance squared to `other` |
+| `distance(other)` -> `double` | calculates the distance to `other`. Equivalent to `std::sqrt(distance2(other))` |
+| `normalize` -> `vector<double, size>` | normalizes the vector. Equivalent to dividing by it's length |
+| `set_length(length)` -> `vector<double, size>` | sets the length of the vector. Equivalent to `normalize() * length` |
+| `delta_angle(other)` -> `double` | calculates the angle to `other` |
+| `apply(fn)` -> `operation` | creates an operation which applies the function `fn` to each component |
+| `abs` -> `operation` | calculates the absolute values of each component |
+| `round` -> `operation` | calculates the rounded values of each component |
+| `floor` -> `operation` | calculates the floored values of each component |
+| `ceil` -> `operation` | calculates the ceiling values of each component |
+| `angle` -> `double` | **[2D only]** calculates the angle represented the 2D vector |
+| `from_angle(angle)` -> `vector<scalar_t, 2>` | **[2D only]** **[static]** creates the vector representation of the angle on the unit circle |
+| `cross(other)` -> `vector<scalar_t, 3>` | **[3D only]** calculates the cross product with `other` |
+| **Utility functions:** |
+| `evaulate(other)` -> `vector<scalar_t, size>` | **[Value only]** evaulates/copies components from `other` |
+| `to_string(optional: name)` -> `std::string` | **[Value only]** creates string representation of the vector |
+| `evaluate` -> `vector<scalar_t, size>` | **[Operation only]** forces evaluation |
+| `to_string(optional: name)` | **[Operation only]** forces evaluation and creates string representation of resulting vector |
+
 ### STL integration
   
-* `std::ostream operator<<` overload to serialize vector data
-* `std::hash operator()` specialization to allow use as keys in std::unordered_* containers
-* `std::begin` and `std::end` overloads to enable range-for loops
+| function(s) | description |
+| --- | --- |
+| `std::ostream operator<<` | overload to serialize vector data |
+| `std::hash::operator()` | specialization to allow use as keys in std::unordered_* containers |
+| `std::begin` and `std::end` | overloads to enable range-for loops |
 
 ### Options
 
