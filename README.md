@@ -20,6 +20,29 @@ The generic vector template is defined as `vector<[scalar type], [size]>` in nam
 
 ## Features
 
+### Operators
+
+* all operators require the argument vector expressions (if more than one) to be of the same size
+* the binary operators `+`, `-`, `*`, `/`, `%`, `&`, `|`, `^`, `>>`, `<<`, and their respective assignment counterparts are all overloaded for expressions of the pattern:
+  ```cpp
+  [vector expression] [operation] [vector expression]
+  [vector expression] [operation] [scalar]
+  ```
+* all binary operators **apart from** `>>`, `<<`, and the assignment operators are overloaded for expressions of the pattern:
+  ```cpp
+  [scalar] [operation] [vector expression]
+  ```
+* the unary operators `+`, `-`, and `~` are overloaded for all vector expressions and are evaluated on a component-basis
+* is [`EqualityComparable`](https://en.cppreference.com/w/cpp/named_req/EqualityComparable):
+  ```cpp
+  float3d a { 1, 2, 3 };
+  float3d b = a;
+  float3d c { 4, 5, 6 };
+  
+  assert(a == b);
+  assert(a != (b + c));
+  ```
+
 ### Construction
 
 * is [`DefaultConstructible`](https://en.cppreference.com/w/cpp/named_req/DefaultConstructible):
@@ -55,29 +78,6 @@ The generic vector template is defined as `vector<[scalar type], [size]>` in nam
   float2d v = float2d::from_angle(0); // v contains 1, 0
   ```
 
-### Operators
-
-* all operators require the argument vector expressions (if more than one) to be of the same size
-* the binary operators `+`, `-`, `*`, `/`, `%`, `&`, `|`, `^`, `>>`, `<<`, and their respective assignment counterparts are all overloaded for expressions of the pattern:
-  ```cpp
-  [vector expression] [operation] [vector expression]
-  [vector expression] [operation] [scalar]
-  ```
-* all binary operators **apart from** `>>`, `<<`, and the assignment operators are overloaded for expressions of the pattern:
-  ```cpp
-  [scalar] [operation] [vector expression]
-  ```
-* the unary operators `+`, `-`, and `~` are overloaded for all vector expressions and are evaluated on a component-basis
-* is [`EqualityComparable`](https://en.cppreference.com/w/cpp/named_req/EqualityComparable):
-  ```cpp
-  float3d a { 1, 2, 3 };
-  float3d b = a;
-  float3d c { 4, 5, 6 };
-  
-  assert(a == b);
-  assert(a != (b + c));
-  ```
-  
 ### Expression templates
 
 * operations aren't evaluated until applied to a value:
