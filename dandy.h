@@ -222,7 +222,7 @@ namespace expr
     _DD_DEFINE_BINARY_OPERATOR(-,  false);
     _DD_DEFINE_BINARY_OPERATOR(*,  false);
     _DD_DEFINE_BINARY_OPERATOR(/,  false);
-    _DD_DEFINE_BINARY_OPERATOR(%,  true);
+    _DD_DEFINE_BINARY_OPERATOR(%,  false);
     _DD_DEFINE_BINARY_OPERATOR(&,  false);
     _DD_DEFINE_BINARY_OPERATOR(|,  false);
     _DD_DEFINE_BINARY_OPERATOR(^,  false);
@@ -258,15 +258,6 @@ namespace expr
                 std::sin(angle)
             };
         }
-
-#ifdef DD_SFML
-        // conversion operator to sf::Vector2
-        DD_TEMPLATE_SCALAR(S)
-        operator sf::Vector2<S>() const noexcept
-        {
-            return { _value(0), _value(1) };
-        }
-#endif
     };
 
     template<class CHILD>
@@ -284,15 +275,6 @@ namespace expr
                 _value(0) * e[1] - _value(1) * e[0]
             };
         }
-        
-#ifdef DD_SFML
-        // conversion operator to sf::Vector3
-        DD_TEMPLATE_SCALAR(S)
-        operator sf::Vector3<S>() const noexcept
-        {
-            return { _value(0), _value(1), _value(2) };
-        }
-#endif
     };
 
     /*
