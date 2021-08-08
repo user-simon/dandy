@@ -94,7 +94,7 @@ NOTE: all operators require the argument vector expressions (if more than one) t
   // alternate syntax:
   auto v = *(int3d(1, 2, 3) + int3d(1, 2, 3)); // v is a vector and contains 2, 4, 6
   ```
-* or evaluated component-wise through the index operators (note: only the specified index is evaluated):
+* or evaluated component-wise through the index operators (NOTE: only the specified index is evaluated):
   ```cpp
   int x = (int3d(1, 2, 3) + int3d(1, 2, 3))[0];
   ```
