@@ -158,4 +158,4 @@ NOTE: `scalar_t` and `size` refer to the traits of the object on which the funct
   
 ### User defined conversions
 
-TODO: implement and write documentation
+TODO: write documentation
