@@ -562,12 +562,12 @@ namespace expr
         // default ctor - initializes all components to zero
         constexpr value() noexcept : data{}, names_t(data) {}
 
-        // explicit ctor (1) - initialize all components individually
+        // value ctor (1) - initialize all components individually
         template<class... ARGS, class = std::enable_if_t<sizeof...(ARGS) == N && std::conjunction_v<std::is_convertible<ARGS, S>...>>>
         constexpr value(const ARGS&... args) noexcept : data{ (S)args... }, names_t(data) {}
 
-        // explicit ctor (2) - initialize all components to the same value
-        constexpr value(S v) noexcept : names_t(data)
+        // value ctor (2) - initialize all components to the same value
+        constexpr explicit value(S v) noexcept : names_t(data)
         {
             for (size_t i = 0; i < N; i++)
                 data[i] = v;
@@ -590,6 +590,13 @@ namespace expr
         /*
          *  operators
         */
+
+        _DD_TEMPLATE_CONSTRAINT(E, (traits::is_same_size_v<E, value>))
+        inline constexpr value& operator=(const E& e)
+        {
+            evaluate(e);
+            return *this;
+        }
 
         inline constexpr S operator[](size_t i) const noexcept
         {
@@ -642,9 +649,12 @@ namespace expr
 template<class SCALAR_T, size_t SIZE>
 using vector = expr::value<SCALAR_T, SIZE>;
 
-_DD_DEFINE_VECTOR_SIZE_ALIASES(2);
-_DD_DEFINE_VECTOR_SIZE_ALIASES(3);
-_DD_DEFINE_VECTOR_SIZE_ALIASES(4);
+namespace types
+{
+    _DD_DEFINE_VECTOR_SIZE_ALIASES(2);
+    _DD_DEFINE_VECTOR_SIZE_ALIASES(3);
+    _DD_DEFINE_VECTOR_SIZE_ALIASES(4);
+}
 
 /*
  *  static member resolves

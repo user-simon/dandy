@@ -1,12 +1,12 @@
 #include <gtest/gtest.h>
 #include "dandy.h"
 
-using namespace dd;
+using namespace dd::types;
 
 TEST(requirements, requirements)
 {
     // size and type of vector shouldn't matter so only int2d is tested
-
+    
     EXPECT_TRUE(std::is_default_constructible_v<int2d>);
     EXPECT_TRUE(std::is_move_constructible_v<int2d>);
     EXPECT_TRUE(std::is_copy_constructible_v<int2d>);
