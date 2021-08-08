@@ -10,7 +10,7 @@
 #define _DD_NAMESPACE_OPEN namespace dd {
 #define _DD_NAMESPACE_CLOSE }
 
-#define _DD_EXPR_RETURN_T auto // defined for explicit return types
+#define _DD_OPERATION_T auto // defined for explicit return types
 #define _DD_APPLY_WRAPPER(fn) apply([](const scalar_t& v) { return fn(v); }) // wrapper to select the correct function overload
 #define _DD_TEMPLATE_CONSTRAINT(ty, constraint) template<class ty, class = std::enable_if_t<constraint>>
 
@@ -37,7 +37,7 @@
 
 #define _DD_DEFINE_BINARY_OPERATOR(op, strict_ordering)                                                       \
     template<class L, class R, class = std::enable_if_t<traits::is_valid_operation_v<L, R, strict_ordering>>> \
-    constexpr inline _DD_EXPR_RETURN_T operator op (const L& l, const R& r)                                   \
+    constexpr inline _DD_OPERATION_T operator op (const L& l, const R& r)                                   \
     {                                                                                                         \
         return expr::operation                                                                                \
         {                                                                                                     \
@@ -47,14 +47,14 @@
                                                                                                               \
     }                                                                                                         \
     template<class L, class R, class = std::enable_if_t<traits::is_valid_operation_v<L, R, true>>>            \
-    constexpr inline _DD_EXPR_RETURN_T operator op##=(L& l, const R& r)                                       \
+    constexpr inline _DD_OPERATION_T operator op##=(L& l, const R& r)                                       \
     {                                                                                                         \
         return l = l op r;                                                                                    \
     }                                                                                                         \
 
 #define _DD_DEFINE_UNARY_OPERATOR(op)                                 \
     template<class E, class = std::enable_if_t<traits::is_expr_v<E>>> \
-    constexpr inline _DD_EXPR_RETURN_T operator op (const E& e)       \
+    constexpr inline _DD_OPERATION_T operator op (const E& e)       \
     {                                                                 \
         return expr::operation                                        \
         {                                                             \
@@ -102,6 +102,13 @@ namespace expr
     template<class, size_t>
     struct value;
 }
+
+/*
+ *  converter
+ *    interface to enable conversions between vector and arbitrary user types
+*/
+template<class T, class U>
+struct converter {};
 
 namespace traits
 {
@@ -211,6 +218,19 @@ namespace traits
 
     template<class T>
     inline constexpr bool has_named_components_v = has_named_components<T>::value;
+    
+    /*
+     *  has_converter
+     *    true if there is a converter defined to convert between T and U
+    */
+    template<class T, class U, class = void>
+    struct has_converter : std::false_type {};
+
+    template<class T, class U>
+    struct has_converter<T, U, std::void_t<decltype(converter<T, U>::from(std::declval<T>()))>> : std::true_type {};
+
+    template<class T, class U>
+    inline constexpr bool has_converter_v = has_converter<T, U>::value;
 }
 
 namespace expr
@@ -229,8 +249,8 @@ namespace expr
     _DD_DEFINE_BINARY_OPERATOR(>>, true);
     _DD_DEFINE_BINARY_OPERATOR(<<, true);
 
-    _DD_DEFINE_UNARY_OPERATOR(-);
     _DD_DEFINE_UNARY_OPERATOR(+);
+    _DD_DEFINE_UNARY_OPERATOR(-);
     _DD_DEFINE_UNARY_OPERATOR(~);
 
     /*
@@ -305,6 +325,12 @@ namespace expr
         constexpr bool operator!=(const E& e) const noexcept
         {
             return !operator==(e);
+        }
+
+        _DD_TEMPLATE_CONSTRAINT(T, (traits::has_converter_v<result_t, T>))
+        inline constexpr operator T()
+        {
+            return converter<result_t, T>::from(_child());
         }
 
         /*
@@ -388,33 +414,33 @@ namespace expr
         }
 
         _DD_TEMPLATE_CONSTRAINT(FN, (std::is_invocable_v<FN, scalar_t>))
-        inline constexpr _DD_EXPR_RETURN_T apply(const FN& fn) const noexcept
+        inline constexpr _DD_OPERATION_T apply(const FN& fn) const noexcept
         {
             return operation{ fn, _child() };
         }
 
-        inline constexpr _DD_EXPR_RETURN_T abs() const noexcept
+        inline constexpr _DD_OPERATION_T abs() const noexcept
         {
             return _DD_APPLY_WRAPPER(std::abs);
         }
 
-        inline constexpr _DD_EXPR_RETURN_T round() const noexcept
+        inline constexpr _DD_OPERATION_T round() const noexcept
         {
             return _DD_APPLY_WRAPPER(std::round);
         }
 
-        inline constexpr _DD_EXPR_RETURN_T floor() const noexcept
+        inline constexpr _DD_OPERATION_T floor() const noexcept
         {
             return _DD_APPLY_WRAPPER(std::floor);
         }
 
-        inline constexpr _DD_EXPR_RETURN_T ceil() const noexcept
+        inline constexpr _DD_OPERATION_T ceil() const noexcept
         {
             return _DD_APPLY_WRAPPER(std::ceil);
         }
 
         _DD_TEMPLATE_CONSTRAINT(S, std::is_arithmetic_v<S>)
-        inline constexpr _DD_EXPR_RETURN_T scalar_cast() const noexcept
+        inline constexpr _DD_OPERATION_T scalar_cast() const noexcept
         {
             return _DD_APPLY_WRAPPER(S);
         }
@@ -545,7 +571,7 @@ namespace expr
         constexpr value() noexcept : data{}, names_t(data) {}
 
         // value ctor (1) - initialize all components individually
-        template<class... ARGS, class = std::enable_if_t<sizeof...(ARGS) == N && std::conjunction_v<std::is_convertible<ARGS, S>...>>>
+        _DD_TEMPLATE_CONSTRAINT(...ARGS, (sizeof...(ARGS) == N && std::conjunction_v<std::is_convertible<ARGS, S>...>))
         constexpr value(const ARGS&... args) noexcept : data{ (S)args... }, names_t(data) {}
 
         // value ctor (2) - initialize all components to the same value
@@ -562,18 +588,22 @@ namespace expr
             evaluate(other);
         }
 
-        // expression ctor - copy/evaluate values from another expression
-        _DD_TEMPLATE_CONSTRAINT(E, (traits::is_same_size_v<E, value>))
-        constexpr value(const E& e) noexcept : names_t(data)
+        // conversion ctor - get values from a different type of vector
+        //   foreign vector types are converted using converter::from and vector operations are evaluated
+        _DD_TEMPLATE_CONSTRAINT(T, (traits::is_same_size_v<value, T> || traits::has_converter_v<value, T>))
+        constexpr value(const T& v) : names_t(data)
         {
-            evaluate(e);
+            if constexpr(traits::is_same_size_v<value, T>)
+                evaluate(v);
+            else
+                evaluate(converter<value, T>::from(v));
         }
-
+        
         /*
          *  operators
         */
 
-        _DD_TEMPLATE_CONSTRAINT(E, (traits::is_same_size_v<E, value>))
+        _DD_TEMPLATE_CONSTRAINT(E, (traits::is_same_size_v<value, E>))
         inline constexpr value& operator=(const E& e)
         {
             evaluate(e);
@@ -594,7 +624,7 @@ namespace expr
          *  utility
         */
 
-        _DD_TEMPLATE_CONSTRAINT(E, (traits::is_same_size_v<E, value>))
+        _DD_TEMPLATE_CONSTRAINT(E, (traits::is_same_size_v<value, E>))
         constexpr value& evaluate(const E& e) noexcept
         {
             for (size_t i = 0; i < N; i++)
