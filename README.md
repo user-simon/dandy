@@ -134,6 +134,7 @@ NOTE: `scalar_t` and `size` refer to the traits of the object on which the funct
 | `round` -> `operation` | calculates the rounded values of each component |
 | `floor` -> `operation` | calculates the floored values of each component |
 | `ceil` -> `operation` | calculates the ceiling values of each component |
+| `scalar_cast<T>` -> `operation` | casts each component to T |
 | `angle` -> `double` | **[2D only]** calculates the angle represented the 2D vector |
 | `from_angle(angle)` -> `vector<scalar_t, 2>` | **[2D only]** **[static]** creates the vector representation of the angle on the unit circle |
 | `cross(other)` -> `vector<scalar_t, 3>` | **[3D only]** calculates the cross product with `other` |
