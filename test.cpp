@@ -1,8 +1,25 @@
 #include <gtest/gtest.h>
 #include "dandy.h"
 
+using namespace dd;
+
+TEST(requirements, requirements)
+{
+    // size and type of vector shouldn't matter so only int2d is tested
+
+    EXPECT_TRUE(std::is_default_constructible_v<int2d>);
+    EXPECT_TRUE(std::is_move_constructible_v<int2d>);
+    EXPECT_TRUE(std::is_copy_constructible_v<int2d>);
+    EXPECT_TRUE(std::is_move_assignable_v<int2d>);
+    EXPECT_TRUE(std::is_copy_assignable_v<int2d>);
+    EXPECT_TRUE(std::is_destructible_v<int2d>);
+    EXPECT_TRUE(std::is_swappable_v<int2d>);
+}
+
 TEST(structure, components)
 {
+    // check that all component names exist
+    
     int2d a;
     a.x, a.y;
 
@@ -10,7 +27,9 @@ TEST(structure, components)
     b.x, b.y, b.z;
 
     int4d c;
-    c.x, c.y, c.z;
+    c.x, c.y, c.z, c.w;
+
+    // check that they correctly correspond to the data values
 
     int4d d;
     EXPECT_TRUE(d.x == d[0] && d.y == d[1] && d.z == d[2] && d.w == d[3]);
@@ -33,11 +52,12 @@ TEST(constructors, value)
 TEST(constructors, copy)
 {
     int2d a(1, 2);
-    int2d b(3, 4);
+    int2d b = a;
 
-    a = b;
     EXPECT_TRUE(a[0] == b[0] && a[1] == b[1]);
     EXPECT_TRUE(a.x == b.x && a.y == b.y);
+
+    // ensure component_names is initialized properly
 
     a.x = 10;
     EXPECT_TRUE(a.x != b.x);
@@ -61,7 +81,7 @@ TEST(operators, comparison)
 TEST(expressions, expressions)
 {
     double2d a(1.2, 2.3);
-    int2d b(3, 4);
+    int2d    b(3, 4);
     binary2d c(1, 0);
 
     double2d d = a + b * c;
@@ -82,7 +102,7 @@ TEST(math, arithmetic)
     EXPECT_TRUE(a.nonzero());
     EXPECT_FALSE(int2d::zero.nonzero());
     
-    // scalar modifyers
+    // scalar modifiers
     double2d b(-2.3, 4.5);
     EXPECT_EQ(b.abs(), double2d(2.3, 4.5));
     EXPECT_EQ(b.round(), int2d(-2, 5));
@@ -130,9 +150,6 @@ TEST(math, linear)
 
 TEST(serialization, to_string)
 {
-    dandy_v<int, 2, true> a(1, 2);
-    dandy_v<int, 2, false> b = a;
-
+    int2d a(1, 2);
     EXPECT_EQ(a.to_string(), "x: 1  y: 2  ");
-    EXPECT_EQ(b.to_string(), "0: 1  1: 2  ");
 }
