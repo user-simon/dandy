@@ -9,7 +9,7 @@
 The generic vector template is defined as `vector<[scalar type], [size]>` in namespace `dd`. For convenience, vectors sizes 2-4 have aliases of the form `[scalar type][size]d` in the `dd::types` namespace:
 
 | vector<T, 2> | vector<T, 3> | vector<T, 4> |
-| :-: | :-: | :-: |
+| --: | --: | --: |
 | binary2d | binary3d | binary4d |
 | char2d | char3d | char4d |
 | uchar2d | uchar3d | uchar4d |
