@@ -108,6 +108,10 @@ TEST(math, arithmetic)
     EXPECT_EQ(b.round(), int2d(-2, 5));
     EXPECT_EQ(b.floor(), int2d(-3, 4));
     EXPECT_EQ(b.ceil(), int2d(-2, 5));
+
+    // scalar casting
+    double2d c = b.scalar_cast<int>();
+    EXPECT_EQ(c, int2d(b.x, b.y));
 }
 
 TEST(math, length)

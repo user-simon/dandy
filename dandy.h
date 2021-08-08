@@ -1,11 +1,11 @@
 #pragma once
-#include <type_traits>
-#include <algorithm>
-#include <ostream>
-#include <string>
-#include <optional>
-#include <functional>
-#include <tuple>
+#include <type_traits> // see dd::traits
+#include <algorithm>   // std::max
+#include <ostream>     // std::ostream
+#include <string>      // std::string
+#include <optional>    // std::optional
+#include <functional>  // std::hash
+#include <tuple>       // std::tuple
 
 #define _DD_NAMESPACE_OPEN namespace dd {
 #define _DD_NAMESPACE_CLOSE }
@@ -429,6 +429,12 @@ namespace expr
         inline constexpr _DD_EXPR_RETURN_T ceil() const noexcept
         {
             return _DD_APPLY_WRAPPER(std::ceil);
+        }
+
+        _DD_TEMPLATE_CONSTRAINT(S, std::is_arithmetic_v<S>)
+        inline constexpr _DD_EXPR_RETURN_T scalar_cast() const noexcept
+        {
+            return _DD_APPLY_WRAPPER(S);
         }
     };
     
