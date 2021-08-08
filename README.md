@@ -102,7 +102,7 @@ The generic vector template is defined as `vector<[scalar type], [size]>` in nam
 
 ### Indexing
   
-* by default, components in a vector value can be accessed either by index or by name:
+* [by default](#options), components in a vector value can be accessed either by index or by name:
   ```cpp
   float3d v { 1, 2, 3 };
   float x = v[0]; // x is 1
