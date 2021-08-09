@@ -170,7 +170,7 @@ NOTE: here, `scalar_t` refers to the scalar type of the vector expression on whi
   
 ## User defined conversions
 
-To enable **implicit** conversions between **dandy** and an arbitrary foreign vector type, start by specializing the `dd::converter` class to desired **dandy** vector and desired foreign vector, **in that order**. Then implement two static methods, both named `from`, in the class: each taking one of the vectors as parameter and returning the other.
+To enable **implicit** conversions between **dandy** and an arbitrary foreign vector type, start by specializing the `dd::converter` class to desired **dandy** vector and desired foreign vector, **in that order**. Then implement two static methods in the class, both named `from`: each taking one of the vectors as parameter and returning the other.
 
 See below for examples:
 
