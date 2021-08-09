@@ -44,7 +44,7 @@ The generic vector template is defined as `vector<[scalar type], [size]>` in nam
 
 ## Basic usage
 
-Simply include the header file and optionally use namespace the `dd::types`.
+Simply include the header file and optionally use the namespace `dd::types`.
 
 ## Operators
 NOTE: all operators require the argument vector expressions (if more than one) to be of the same size
