@@ -221,7 +221,8 @@ namespace traits
     
     /*
      *  has_converter
-     *    true if there is a converter defined to convert between T and U
+     *    checks if there is a converter defined for T and U
+     *    only checks for converters with template parameters in specified order (converter<T, U>)
     */
     template<class T, class U, class = void>
     struct has_converter : std::false_type {};
@@ -328,9 +329,18 @@ namespace expr
         }
 
         _DD_TEMPLATE_CONSTRAINT(T, (traits::has_converter_v<result_t, T>))
-        inline constexpr operator T()
+        inline operator T() const
         {
-            return converter<result_t, T>::from(_child());
+            /*
+                operation -> value conversion can't be done implicitly since
+                it won't know if it should convert operation to a value or to
+                T (causing a recursive call)
+            */
+
+            if constexpr (traits::is_value_v<CHILD>)
+                return converter<result_t, T>::from(_child());
+            else
+                return converter<result_t, T>::from(_child().evaluate());
         }
 
         /*
