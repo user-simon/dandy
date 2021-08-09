@@ -126,13 +126,13 @@ NOTE: all operators require the argument vector expressions (if more than one) t
 
 ## Functions
 
-NOTE: here, `scalar_t` refers to the scalar type of the vector expression on which the function is called (`*this`).
+NOTE: here, `scalar_t` refers to the scalar type of the vector expression on which the function is called (`*this`)
 | Function | Description |
 | --- | --- |
 | **Math functions:** | 
 | `sum` -> `scalar_t` | calculates the sum of the vector |
 | `product` -> `scalar_t` | calculates the product of the vector |
-| `nonzero` -> `bool` | true iff all components are 0 |
+| `nonzero` -> `bool` | true iff all components are non-zero |
 | `dot(vector)` -> `scalar_t` | calculates the dot product with `vector` |
 | `length2` -> `scalar_t` | calculates the length **squared** |
 | `length` -> `double` | calculates the length. Equivalent to `std::sqrt(length2())` |
