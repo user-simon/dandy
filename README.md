@@ -137,6 +137,13 @@ NOTE: all operators require the argument vector expressions (if more than one) t
   ```cpp
   int x = (int3d(1, 2, 3) + int3d(1, 2, 3))[0]; // x is 2
   ```
+* components can also be accessed with a range-for loop:
+  ```cpp
+  int sum = 0;
+  
+  for (double v : double3d(1, 2, 3))
+    sum += v;
+  ```
 
 ## Functions
 
