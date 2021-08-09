@@ -241,5 +241,5 @@ NOTES:
 | `is_valid_operation<T, U, bool S>` -> `value<bool>` | determines if `T` and `U` make up a valid operation. `S = true` forbids a scalar type from appearing first |
 | `is_value<T>` -> `value<bool>` | determines if `T` is a value expression |
 | `has_named_components<T>` -> `value<bool>` | determines if T has named components |
-| `has_converter<T, U>` -> `value<bool>` | determines if there is a `converter` specialization defined from T to U |
+| `has_converter<T, U>` -> `value<bool>` | determines if there is a `converter` specialization defined from `T` to `U` |
 
