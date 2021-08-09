@@ -18,26 +18,26 @@
         static constexpr char _names_str[] = str;                                                \
         constexpr component_names& operator= (const component_names&) noexcept { return *this; } \
 
-#define _DD_BASE_COMMON_DEFINES                                         \
-    public:                                                             \
-        using result_t = traits::result_t<CHILD>;                       \
-        using scalar_t = traits::scalar_t<CHILD>;                       \
-        static constexpr size_t size = traits::size_v<CHILD>;           \
-    private:                                                            \
-        inline constexpr const CHILD& _child() const                    \
-        {                                                               \
-            return static_cast<const CHILD&>(*this);                    \
-        }                                                               \
-                                                                        \
-        inline constexpr scalar_t _value(size_t i) const                \
-        {                                                               \
-            return _child()[i];                                         \
-        }                                                               \
-    public:                                                             \
+#define _DD_BASE_COMMON_DEFINES                               \
+    public:                                                   \
+        using result_t = traits::result_t<CHILD>;             \
+        using scalar_t = traits::scalar_t<CHILD>;             \
+        static constexpr size_t size = traits::size_v<CHILD>; \
+    private:                                                  \
+        inline constexpr const CHILD& _child() const          \
+        {                                                     \
+            return static_cast<const CHILD&>(*this);          \
+        }                                                     \
+                                                              \
+        inline constexpr scalar_t _value(size_t i) const      \
+        {                                                     \
+            return _child()[i];                               \
+        }                                                     \
+    public:                                                   \
 
 #define _DD_DEFINE_BINARY_OPERATOR(op, strict_ordering)                                                       \
     template<class L, class R, class = std::enable_if_t<traits::is_valid_operation_v<L, R, strict_ordering>>> \
-    constexpr inline _DD_OPERATION_T operator op (const L& l, const R& r)                                   \
+    constexpr inline _DD_OPERATION_T operator op (const L& l, const R& r)                                     \
     {                                                                                                         \
         return expr::operation                                                                                \
         {                                                                                                     \
@@ -47,14 +47,14 @@
                                                                                                               \
     }                                                                                                         \
     template<class L, class R, class = std::enable_if_t<traits::is_valid_operation_v<L, R, true>>>            \
-    constexpr inline _DD_OPERATION_T operator op##=(L& l, const R& r)                                       \
+    constexpr inline _DD_OPERATION_T operator op##=(L& l, const R& r)                                         \
     {                                                                                                         \
         return l = l op r;                                                                                    \
     }                                                                                                         \
 
 #define _DD_DEFINE_UNARY_OPERATOR(op)                                 \
     template<class E, class = std::enable_if_t<traits::is_expr_v<E>>> \
-    constexpr inline _DD_OPERATION_T operator op (const E& e)       \
+    constexpr inline _DD_OPERATION_T operator op (const E& e)         \
     {                                                                 \
         return expr::operation                                        \
         {                                                             \
