@@ -14,6 +14,20 @@
 
 ---
 
+## Table of contents
+
+* [Types](#types)
+* [Basic usage](#basic-usage)
+* [Operators](#operators)
+* [Construction](#construction)
+* [Expression templates](#expression-templates)
+* [Indexing](#indexing)
+* [Functions](#functions)
+* [STL integration](#stl-integration)
+* [Options](#options)
+* [User defined conversions](#user-defined-conversions)
+* [Metafunctions](#metafunctions)
+
 ## Types
 
 The generic vector template is defined as `vector<[scalar type], [size]>` in namespace `dd`. For convenience, vectors sizes 2-4 have aliases of the form `[scalar type][size]d` in the `dd::types` namespace:
@@ -222,3 +236,24 @@ struct dd::converter<dd::vector<S1, 2>, some_vector<S2>>
     }
 };
 ```
+
+## Metafunctions
+
+NOTES:
+* these are included in the documentation only for posterity and are not expected to be of use to the user
+* all metafunctions are under the namespace `dd::traits`
+* all metafunctions have corresponding `_t` or `_v` postfix helpers
+* for brevity, `value` serves as an alias for `std::integral_constant`
+
+| Function | Description |
+| --- | --- |
+| `size<T>` -> `value<size_t>` | gets the vector size of expression `T` |
+| `scalar<T>` -> `type` | gets the scalar type of expression `T` |
+| `result<T>` -> `type` | gets the resulting vector value of expression `T` |
+| `is_expr<T>` -> `value<bool>` | determines if `T` is a vector expression |
+| `is_same_size<T, U>` -> `value<bool>` | determines if `T` and `U` are both expressions of the same size |
+| `is_valid_operation<T, U, bool S>` -> `value<bool>` | determines if `T` and `U` make up a valid operation. `S = true` forbids a scalar type from appearing first |
+| `is_value<T>` -> `value<bool>` | determines if `T` is a value expression |
+| `has_named_components<T>` -> `value<bool>` | determines if T has named components |
+| `has_converter<T, U>` -> `value<bool>` | determines if there is a `converter` specialization defined from `T` to `U` |
+
