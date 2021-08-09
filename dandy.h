@@ -114,7 +114,7 @@ namespace traits
 {
     /*
      *  size
-     *    determines the size (number of dimensions) of the given expression type
+     *    gets the vector size of expression T
     */
     template<class>
     struct size : std::integral_constant<size_t, 1> {};
@@ -130,7 +130,7 @@ namespace traits
 
     /*
      *  scalar
-     *    determines the scalar type of the given expression type
+     *    gets the scalar type of expression T
     */
     template<class S>
     struct scalar : std::common_type<S> {};
@@ -146,7 +146,7 @@ namespace traits
     
     /*
      *  result
-     *    determines the result type of given expression type
+     *    gets the resulting vector value of expression T
     */
     template<class>
     struct result {};
@@ -162,7 +162,7 @@ namespace traits
 
     /*
      *  is_expr
-     *    determines if given type is an expression
+     *    determines if T is a vector expression
     */
     template<class T>
     struct is_expr : std::is_base_of<expr::base<T>, T> {};
@@ -172,17 +172,18 @@ namespace traits
 
     /*
      *  is_same_size
-     *    determines if the two given types are expressions of the same size
+     *    determines if T and U are both expressions of the same size
     */
-    template<class L, class R>
-    struct is_same_size : std::conjunction<is_expr<L>, is_expr<R>, std::bool_constant<size_v<L> == size_v<R>>> {};
+    template<class T, class U>
+    struct is_same_size : std::conjunction<is_expr<T>, is_expr<U>, std::bool_constant<size_v<T> == size_v<U>>> {};
 
-    template<class L, class R>
-    inline constexpr bool is_same_size_v = is_same_size<L, R>::value;
+    template<class T, class U>
+    inline constexpr bool is_same_size_v = is_same_size<T, U>::value;
 
     /*
      *  is valid operation
-     *    determines if the two given types form a valid vector operation
+     *    determines if T and U make up a valid operation
+     *    STRICT_ORDERING = true forbids a scalar type from appearing first
     */
     template<class L, class R, bool STRICT_ORDERING>
     struct is_valid_operation
@@ -195,7 +196,7 @@ namespace traits
 
     /*
      *  is value
-     *    determines if given type is a value expression
+     *    determines if T is a value expression
     */
     template<class>
     struct is_value : std::false_type {};
@@ -208,7 +209,7 @@ namespace traits
 
     /*
      *  has named components
-     *    determines if given value type has named components
+     *    determines if T has named components
     */
     template<class T, class = void>
     struct has_named_components : std::false_type {};
@@ -221,8 +222,7 @@ namespace traits
     
     /*
      *  has_converter
-     *    checks if there is a converter defined for T and U
-     *    only checks for converters with template parameters in specified order (converter<T, U>)
+     *    determines if there is a converter specialization defined from T to U
     */
     template<class T, class U, class = void>
     struct has_converter : std::false_type {};
