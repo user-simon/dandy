@@ -14,6 +14,20 @@
 
 ---
 
+## Table of contents
+
+* [Types](#types)
+* [Basic usage](#basic-usage)
+* [Operators](#operators)
+* [Construction](#construction)
+* [Expression templates](#expression-templates)
+* [Indexing](#indexing)
+* [Functions](#functions)
+* [STL integration](#stl-integration)
+* [Options](#options)
+* [User defined conversions](#user-defined-conversions)
+* [Metafunctions](#metafunctions)
+
 ## Types
 
 The generic vector template is defined as `vector<[scalar type], [size]>` in namespace `dd`. For convenience, vectors sizes 2-4 have aliases of the form `[scalar type][size]d` in the `dd::types` namespace:
