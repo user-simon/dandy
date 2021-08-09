@@ -222,3 +222,24 @@ struct dd::converter<dd::vector<S1, 2>, some_vector<S2>>
     }
 };
 ```
+
+## Metafunctions
+
+NOTES:
+* these are included in the documentation only for posterity and are not expected to be of use to the user
+* all metafunctions are under the namespace `dd::traits`
+* all metafunctions have corresponding `_t` or `_v` postfix helpers
+* for brevity, `value` serves as an alias for `std::integral_constant`
+
+| Function | Description |
+| --- | --- |
+| `size<T>` -> `value<size_t>` | gets the vector size of expression `T` |
+| `scalar<T>` -> `type` | gets the scalar type of expression `T` |
+| `result<T>` -> `type` | gets the resulting vector value of expression `T` |
+| `is_expr<T>` -> `value<bool>` | determines if `T` is a vector expression |
+| `is_same_size<T, U>` -> `value<bool>` | determines if `T` and `U` are both expressions of the same size |
+| `is_valid_operation<T, U, bool S>` -> `value<bool>` | determines if `T` and `U` make up a valid operation. `S = true` forbids a scalar type from appearing first |
+| `is_value<T>` -> `value<bool>` | determines if `T` is a value expression |
+| `has_named_components<T>` -> `value<bool>` | determines if T has named components |
+| `has_converter<T, U>` -> `value<bool>` | determines if there is a `converter` specialization defined from T to U |
+
