@@ -14,7 +14,7 @@
 #define _DD_APPLY_WRAPPER(fn) apply([](const scalar_t& v) { return fn(v); }) // wrapper to select the correct function overload
 #define _DD_TEMPLATE_CONSTRAINT(ty, constraint) template<class ty, class = std::enable_if_t<constraint>>
 
-#define _DD_COMPONENT_DEFINES(str, n)                                                            \
+#define _DD_COMPONENT_DEFINES(str)                                                               \
         static constexpr char _names_str[] = str;                                                \
         constexpr component_names& operator= (const component_names&) noexcept { return *this; } \
 
@@ -531,7 +531,7 @@ namespace expr
     template<class S>
     struct component_names<S, 2, true>
     {
-        _DD_COMPONENT_DEFINES("xy", 2)
+        _DD_COMPONENT_DEFINES("xy")
 
         S& x;
         S& y;
@@ -542,7 +542,7 @@ namespace expr
     template<class S>
     struct component_names<S, 3, true> : component_names<S, 2>
     {
-        _DD_COMPONENT_DEFINES("xyz", 3)
+        _DD_COMPONENT_DEFINES("xyz")
 
         S& z;
 
@@ -552,7 +552,7 @@ namespace expr
     template<class S>
     struct component_names<S, 4, true> : component_names<S, 3>
     {
-        _DD_COMPONENT_DEFINES("xyzw", 4)
+        _DD_COMPONENT_DEFINES("xyzw")
 
         S& w;
 
