@@ -172,7 +172,7 @@ NOTE: here, `scalar_t` refers to the scalar type of the vector expression on whi
 | `from_angle(angle)` -> `vector` | **[2D only]** **[static]** creates the vector representation of the angle on the unit circle |
 | `cross(vector)` -> `vector` | **[3D only]** calculates the cross product with `vector` |
 | **Utility functions:** |
-| `evaulate(vector)` -> `vector` | **[Value only]** evaulates/copies components from `vector` |
+| `copy_from(vector)` -> `vector` | **[Value only]** evaulates/copies components from `vector` |
 | `to_string(optional: name)` -> `std::string` | **[Value only]** creates string representation of the vector |
 | `evaluate` -> `vector` | **[Operation only]** forces evaluation |
 | `to_string(optional: name)` -> `std::string` | **[Operation only]** forces evaluation and creates string representation of resulting vector |
