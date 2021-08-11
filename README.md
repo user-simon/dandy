@@ -200,7 +200,7 @@ See below for examples:
 struct some_vector
 {
   int x, y;
-}
+};
 
 template<>
 struct dd::converter<int2d, some_vector>
@@ -216,7 +216,7 @@ struct dd::converter<int2d, some_vector>
     {
         return some_vector{ v.x, v.y };
     }
-}
+};
 ```
 
 #### Scalar type agnostic vector conversion:
