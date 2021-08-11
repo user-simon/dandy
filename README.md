@@ -44,7 +44,7 @@ The generic vector template is defined as `vector<[scalar type], [size]>` in nam
 
 ## Basic usage
 
-Simply include the header file and optionally use namespace the `dd::types`.
+Simply include the header file and optionally use the namespace `dd::types`.
 
 ## Operators
 NOTE: all operators require the argument vector expressions (if more than one) to be of the same size
@@ -136,6 +136,13 @@ NOTE: all operators require the argument vector expressions (if more than one) t
 * components in a vector operation can only be accessed by index:
   ```cpp
   int x = (int3d(1, 2, 3) + int3d(1, 2, 3))[0]; // x is 2
+  ```
+* components can also be accessed with a range-for loop:
+  ```cpp
+  int sum = 0;
+  
+  for (double v : double3d(1, 2, 3))
+    sum += v;
   ```
 
 ## Functions
