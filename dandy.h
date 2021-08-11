@@ -107,7 +107,7 @@ namespace expr
  *  converter
  *    interface to enable conversions between vector and arbitrary user types
 */
-template<class T, class U>
+template<class, class>
 struct converter {};
 
 namespace traits
@@ -211,7 +211,7 @@ namespace traits
      *  has named components
      *    determines if T has named components
     */
-    template<class T, class = void>
+    template<class, class = void>
     struct has_named_components : std::false_type {};
 
     template<class T>
@@ -224,7 +224,7 @@ namespace traits
      *  has_converter
      *    determines if there is a converter specialization defined from T to U
     */
-    template<class T, class U, class = void>
+    template<class, class, class = void>
     struct has_converter : std::false_type {};
 
     template<class T, class U>
@@ -331,13 +331,7 @@ namespace expr
         _DD_TEMPLATE_CONSTRAINT(T, (traits::has_converter_v<result_t, T>))
         inline operator T() const
         {
-            /*
-                operation -> value conversion can't be done implicitly since
-                it won't know if it should convert operation to a value or to
-                T (causing a recursive call)
-            */
-
-            if constexpr (traits::is_value_v<CHILD>)
+            if constexpr(traits::is_value_v<CHILD>)
                 return converter<result_t, T>::from(_child());
             else
                 return converter<result_t, T>::from(_child().evaluate());
@@ -481,7 +475,6 @@ namespace expr
          *  ctors
         */
 
-        // explicit ctor
         operation(const OP& op, const ARGS&... args) noexcept : _op(op), _args(args...) {}
 
         /*
@@ -595,7 +588,7 @@ namespace expr
         //   required explicitly to ensure names_t is initialized properly
         constexpr value(const value& other) noexcept : names_t(data)
         {
-            evaluate(other);
+            copy_from(other);
         }
 
         // conversion ctor - get values from a different type of vector
@@ -604,9 +597,9 @@ namespace expr
         constexpr value(const T& v) : names_t(data)
         {
             if constexpr(traits::is_same_size_v<value, T>)
-                evaluate(v);
+                copy_from(v);
             else
-                evaluate(converter<value, T>::from(v));
+                copy_from(converter<value, T>::from(v));
         }
         
         /*
@@ -616,7 +609,7 @@ namespace expr
         _DD_TEMPLATE_CONSTRAINT(E, (traits::is_same_size_v<value, E>))
         inline constexpr value& operator=(const E& e)
         {
-            evaluate(e);
+            copy_from(e);
             return *this;
         }
 
@@ -635,7 +628,7 @@ namespace expr
         */
 
         _DD_TEMPLATE_CONSTRAINT(E, (traits::is_same_size_v<value, E>))
-        constexpr value& evaluate(const E& e) noexcept
+        constexpr value& copy_from(const E& e) noexcept
         {
             for (size_t i = 0; i < N; i++)
                 data[i] = e[i];

@@ -3,6 +3,35 @@
 
 using namespace dd::types;
 
+/*
+ *  boiler-plate to convert vectors. used by test conversions
+*/
+
+struct some_vector
+{
+    int x, y;
+};
+
+template<>
+struct dd::converter<int2d, some_vector>
+{
+    // some_vector -> dandy
+    static int2d from(const some_vector& v)
+    {
+        return int2d{ v.x, v.y };
+    }
+
+    // dandy -> some_vector
+    static some_vector from(const int2d& v)
+    {
+        return some_vector{ v.x, v.y };
+    }
+};
+
+/*
+ *  tests
+*/
+
 TEST(requirements, requirements)
 {
     // size and type of vector shouldn't matter so only int2d is tested
@@ -156,4 +185,16 @@ TEST(serialization, to_string)
 {
     int2d a(1, 2);
     EXPECT_EQ(a.to_string(), "x: 1  y: 2  ");
+}
+
+TEST(conversions, conversions)
+{
+    some_vector v = int2d(1, 2);
+
+    EXPECT_EQ(v.x, 1);
+    EXPECT_EQ(v.y, 2);
+
+    int2d w = v;
+    EXPECT_EQ(w.x, 1);
+    EXPECT_EQ(w.y, 2);
 }
