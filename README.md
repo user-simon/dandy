@@ -200,7 +200,7 @@ NOTE: here, `scalar_t` refers to the scalar type of the vector expression on whi
   
 ## User defined conversions
 
-To enable **implicit** conversions between **dandy** and an arbitrary foreign type, T, start by specializing the `dd::converter` class to desired **dandy** vector and T, **in that order**. Then implement two static methods in the class, both named `from`: each taking one of the types as parameter and returning the other.
+To enable **implicit** conversions between **dandy** and an arbitrary foreign type, **T**, start by specializing the `dd::converter` class to desired **dandy** vector and **T** -- **in that order**. Then implement two static methods in the class, both named `from`: each taking one of the types as parameter and returning the other.
 
 See below for examples:
 
@@ -259,17 +259,17 @@ NOTES:
 * these are included in the documentation only for posterity and are not expected to be of use to the user
 * all metafunctions are under the namespace `dd::traits`
 * all metafunctions have corresponding `_t` or `_v` suffix helpers
-* for brevity, `value` serves as an alias for `std::integral_constant`
+* for brevity, `value` serves as an alias for `std::integral_constant` and `identity` serves as an alias for `std::common_type`
 
 | Function | Description |
 | --- | --- |
-| `size<T>` -> `value<size_t>` | gets the vector size of expression `T` |
-| `scalar<T>` -> `type` | gets the scalar type of expression `T` |
-| `result<T>` -> `type` | gets the resulting vector value of expression `T` |
-| `is_expr<T>` -> `value<bool>` | determines if `T` is a vector expression |
-| `is_same_size<T, U>` -> `value<bool>` | determines if `T` and `U` are both expressions of the same size |
-| `is_valid_operation<T, U, bool S>` -> `value<bool>` | determines if `T` and `U` make up a valid operation. `S = true` forbids a scalar type from appearing first |
-| `is_value<T>` -> `value<bool>` | determines if `T` is a value expression |
-| `has_named_components<T>` -> `value<bool>` | determines if T has named components |
-| `has_converter<T, U>` -> `value<bool>` | determines if there is a `converter` specialization defined from `T` to `U` |
+| `size<T>` : `value<size_t>` | gets the vector size of expression `T` |
+| `scalar<T>` : `identity<type>` | gets the scalar type of expression `T` |
+| `result<T>` : `identity<type>` | gets the resulting vector value of expression `T` |
+| `is_expr<T>` : `value<bool>` | determines if `T` is a vector expression |
+| `is_same_size<T, U>` : `value<bool>` | determines if `T` and `U` are both expressions of the same size |
+| `is_valid_operation<T, U, bool S>` : `value<bool>` | determines if `T` and `U` make up a valid operation. `S = true` forbids a scalar type from appearing first |
+| `is_value<T>` : `value<bool>` | determines if `T` is a value expression |
+| `has_named_components<T>` : `value<bool>` | determines if `T` has named components |
+| `has_converter<T, U>` : `value<bool>` | determines if there is a `converter` specialization defined from `T` to `U` |
 
