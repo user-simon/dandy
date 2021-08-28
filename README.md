@@ -67,7 +67,15 @@ NOTE: all operators require the argument vector expressions (if more than one) t
   assert(a == b);
   assert(a != (b + c));
   ```
-
+* is **explicitly** convertable to a bool:
+  ```cpp
+  if (double2d(3, 4))
+    std::cout << "This will run";
+  if (double2d::zero)
+    std::cout << "This will not";
+    
+  bool is_nonzero = (bool)double2d(1, 0); // explicit cast required, is_nonzero will be true
+  ```
 ## Construction
 
 * is [`DefaultConstructible`](https://en.cppreference.com/w/cpp/named_req/DefaultConstructible):
@@ -153,7 +161,7 @@ NOTE: here, `scalar_t` refers to the scalar type of the vector expression on whi
 | **Math functions:** | 
 | `sum` -> `scalar_t` | calculates the sum of the vector |
 | `product` -> `scalar_t` | calculates the product of the vector |
-| `nonzero` -> `bool` | true iff all components are non-zero |
+| `nonzero` -> `bool` | true iff all components are non-zero, alias for `operator bool` |
 | `dot(vector)` -> `scalar_t` | calculates the dot product with `vector` |
 | `length2` -> `scalar_t` | calculates the length **squared** |
 | `length` -> `double` | calculates the length. Equivalent to `std::sqrt(length2())` |
