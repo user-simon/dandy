@@ -22,6 +22,7 @@
 * [Construction](#construction)
 * [Expression templates](#expression-templates)
 * [Indexing](#indexing)
+* [Predefined vector values](#predefined-vector-values)
 * [Functions](#functions)
 * [STL integration](#stl-integration)
 * [Options](#options)
