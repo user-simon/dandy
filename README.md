@@ -154,6 +154,17 @@ NOTE: all operators require the argument vector expressions (if more than one) t
     sum += v;
   ```
 
+## Predefined vector values
+
+* `vector::zero` contains only zeroes:
+  ```cpp
+  double3d v = double3d::zero; // v contains 0, 0, 0
+  ```
+* `vector::identity` contains only ones:
+  ```cpp
+  double3d v = double3d::identity; // v contains 1, 1, 1
+  ```
+
 ## Functions
 
 NOTE: here, `scalar_t` refers to the scalar type of the vector expression on which the function is called (`*this`)
