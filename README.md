@@ -74,7 +74,8 @@ NOTE: all operators require the argument vector expressions (if more than one) t
   if (double2d::zero)
     std::cout << "This will not";
     
-  bool is_nonzero = (bool)double2d(1, 0); // explicit cast required, is_nonzero will be true
+  // NOTE: explicit cast required
+  bool is_nonzero = (bool)double2d(1, 0); // is_nonzero will be true
   ```
 ## Construction
 
