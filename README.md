@@ -8,7 +8,7 @@
 
 * **lightweight**: a single header file with no non-standard external dependencies
 * **easy to integrate**: all vector types are exposed in the `dd::types` namespace which contains no other symbols
-* **supports conversions to and from foreign vector types**: in order to more easily integrate with other libraries. [Read more](#user-defined-conversions)
+* **supports conversions to and from arbitrary foreign types**: in order to more easily integrate with other libraries. [Read more](#user-defined-conversions)
 * **expression templates**: all vector expressions are parsed at compile-time
 * **STL integration**: overloads for various standard functions
 
@@ -191,7 +191,7 @@ NOTE: here, `scalar_t` refers to the scalar type of the vector expression on whi
   
 ## User defined conversions
 
-To enable **implicit** conversions between **dandy** and an arbitrary foreign vector type, start by specializing the `dd::converter` class to desired **dandy** vector and desired foreign vector, **in that order**. Then implement two static methods in the class, both named `from`: each taking one of the vectors as parameter and returning the other.
+To enable **implicit** conversions between **dandy** and an arbitrary foreign type, start by specializing the `dd::converter` class to desired **dandy** vector and desired foreign, **in that order**. Then implement two static methods in the class, both named `from`: each taking one of the vectors as parameter and returning the other.
 
 See below for examples:
 

@@ -66,6 +66,12 @@ TEST(structure, components)
     EXPECT_TRUE(d.x == d[0] && d.y == d[1] && d.z == d[2] && d.w == d[3]);
 }
 
+TEST(statics, statics)
+{
+    EXPECT_EQ(double2d::zero, double2d(0, 0));
+    EXPECT_EQ(double2d::identity, double2d(1, 1));
+}
+
 TEST(constructors, default)
 {
     int4d a;
@@ -128,7 +134,7 @@ TEST(math, arithmetic)
     EXPECT_EQ(a.product(), 2);
 
     // nonzero
-    EXPECT_TRUE(a.nonzero());
+    EXPECT_TRUE(a);
     EXPECT_FALSE(int2d::zero.nonzero());
     
     // scalar modifiers

@@ -337,6 +337,16 @@ namespace expr
                 return converter<result_t, T>::from(_child().evaluate());
         }
 
+        constexpr explicit operator bool() const noexcept
+        {
+            for (size_t i = 0; i < size; i++)
+            {
+                if (_value(i))
+                    return true;
+            }
+            return false;
+        }
+
         /*
          *  math
         */
@@ -361,12 +371,7 @@ namespace expr
 
         constexpr bool nonzero() const noexcept
         {
-            for (size_t i = 0; i < size; i++)
-            {
-                if (_value(i))
-                    return true;
-            }
-            return false;
+            return operator bool();
         }
 
         _DD_TEMPLATE_CONSTRAINT(E, (traits::is_same_size_v<E, CHILD>))
@@ -564,6 +569,8 @@ namespace expr
         using names_t = component_names<S, N>;
 
         const static value zero;
+        const static value identity;
+
         S data[N];
         
         /*
@@ -588,18 +595,17 @@ namespace expr
         //   required explicitly to ensure names_t is initialized properly
         constexpr value(const value& other) noexcept : names_t(data)
         {
-            copy_from(other);
+            assign(other);
         }
 
         // conversion ctor - get values from a different type of vector
-        //   foreign vector types are converted using converter::from and vector operations are evaluated
         _DD_TEMPLATE_CONSTRAINT(T, (traits::is_same_size_v<value, T> || traits::has_converter_v<value, T>))
         constexpr value(const T& v) : names_t(data)
         {
             if constexpr(traits::is_same_size_v<value, T>)
-                copy_from(v);
+                assign(v);
             else
-                copy_from(converter<value, T>::from(v));
+                assign(converter<value, T>::from(v));
         }
         
         /*
@@ -609,7 +615,7 @@ namespace expr
         _DD_TEMPLATE_CONSTRAINT(E, (traits::is_same_size_v<value, E>))
         inline constexpr value& operator=(const E& e)
         {
-            copy_from(e);
+            assign(e);
             return *this;
         }
 
@@ -628,7 +634,7 @@ namespace expr
         */
 
         _DD_TEMPLATE_CONSTRAINT(E, (traits::is_same_size_v<value, E>))
-        constexpr value& copy_from(const E& e) noexcept
+        constexpr value& assign(const E& e) noexcept
         {
             for (size_t i = 0; i < N; i++)
                 data[i] = e[i];
@@ -676,7 +682,10 @@ namespace types
 */
 
 template<class S, size_t N>
-const vector<S, N> vector<S, N>::zero;
+const vector<S, N> vector<S, N>::zero{ 0, 0 };
+
+template<class S, size_t N>
+const vector<S, N> vector<S, N>::identity{ 1, 1 };
 
 
 _DD_NAMESPACE_CLOSE
