@@ -203,7 +203,7 @@ To enable **implicit** conversions between **dandy** and an arbitrary foreign ty
 
 See below for examples:
 
-#### Simple conversion:
+#### Simple vector conversion:
 ```cpp
 struct some_vector
 {
@@ -257,7 +257,7 @@ struct dd::converter<dd::vector<S1, 2>, some_vector<S2>>
 NOTES:
 * these are included in the documentation only for posterity and are not expected to be of use to the user
 * all metafunctions are under the namespace `dd::traits`
-* all metafunctions have corresponding `_t` or `_v` postfix helpers
+* all metafunctions have corresponding `_t` or `_v` suffix helpers
 * for brevity, `value` serves as an alias for `std::integral_constant`
 
 | Function | Description |
