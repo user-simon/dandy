@@ -68,8 +68,8 @@ TEST(structure, components)
 
 TEST(statics, statics)
 {
-    EXPECT_EQ(double2d::zero, double2d(0, 0));
-    EXPECT_EQ(double2d::identity, double2d(1, 1));
+    EXPECT_EQ(double4d::zero, double4d(0, 0, 0, 0));
+    EXPECT_EQ(double4d::identity, double4d(1, 1, 1, 1));
 }
 
 TEST(constructors, default)
@@ -129,7 +129,7 @@ TEST(expressions, expressions)
 TEST(math, arithmetic)
 {
     // sum, product
-    int2d a(1, 2);
+    int2d a{1, 2};
     EXPECT_EQ(a.sum(), 3);
     EXPECT_EQ(a.product(), 2);
 

@@ -682,10 +682,10 @@ namespace types
 */
 
 template<class S, size_t N>
-const vector<S, N> vector<S, N>::zero{ 0, 0 };
+const vector<S, N> vector<S, N>::zero(0);
 
 template<class S, size_t N>
-const vector<S, N> vector<S, N>::identity{ 1, 1 };
+const vector<S, N> vector<S, N>::identity(1);
 
 
 _DD_NAMESPACE_CLOSE
