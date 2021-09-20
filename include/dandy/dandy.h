@@ -455,7 +455,7 @@ namespace expr
     
     /*
      *  operation
-     *    expressions involving and operation and at least one other expression
+     *    expressions involving an operation and at least one other expression
      *    each component is evaluated in operator[]
     */
     template<class OP, class... ARGS>
