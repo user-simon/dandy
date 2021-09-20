@@ -1,5 +1,5 @@
 #include <gtest/gtest.h>
-#include "dandy.h"
+#include "include/dandy/dandy.h"
 
 using namespace dd::types;
 
