@@ -78,13 +78,11 @@ _DD_NAMESPACE_OPEN
 
 
 /*
- *  DD_NO_NAMES
- *    define flag to disable named vector components
+ *  DD_ENABLE_NAMES
+ *    define DD_ENABLE_NAMES 0 to disable named vector components
 */
-#ifdef DD_NO_NAMES
-inline constexpr size_t ENABLE_NAMES = false;
-#else
-inline constexpr size_t ENABLE_NAMES = true;
+#ifndef DD_ENABLE_NAMES
+#define DD_ENABLE_NAMES 1
 #endif
 
 /*
@@ -518,9 +516,9 @@ namespace expr
     /*
      *  component_names
      *    provides named components (e.g. x, y) for value expressions
-     *    for performance reasons, can be disabled by defining flag DD_NO_NAMES 
+     *    for performance reasons, can be disabled by defining DD_ENABLE_NAMES 0
     */
-    template<class S, size_t, bool = ENABLE_NAMES>
+    template<class S, size_t, bool = DD_ENABLE_NAMES>
     struct component_names
     {
         constexpr component_names(S*) noexcept {}
