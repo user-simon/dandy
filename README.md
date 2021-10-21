@@ -14,7 +14,7 @@ dandy requires C++17 or newer and has been formally tested on MSVC and CLANG.
 
 ## Wiki
 
-Read the documentation [here]().
+Read the documentation [here](https://userexit.github.io/dandy/).
 
 ## Building
 
