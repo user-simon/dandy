@@ -1,275 +1,449 @@
 #pragma once
-#include <type_traits> // see dd::traits
-#include <algorithm>   // std::max
-#include <ostream>     // std::ostream
-#include <string>      // std::string
-#include <optional>    // std::optional
-#include <functional>  // std::hash
-#include <tuple>       // std::tuple
+#include <string>
+#include <string_view>
+#include <ostream>
+#include <type_traits>
+#include <tuple>      // std::tuple, std::apply
+#include <functional> // std::hash
+#include <algorithm>  // std::max
+#include <cstdint>    // fixed width integer types
 
 #define _DD_NAMESPACE_OPEN namespace dd {
 #define _DD_NAMESPACE_CLOSE }
+#define _DD_OPERATION_T auto
+#define _DD_DEFINE_BINARY_OPERATOR(op)                                                              \
+    template<class L, class R, class = std::enable_if_t<traits::is_valid_operation_v<L, R, false>>> \
+    constexpr inline _DD_OPERATION_T operator op (const L& l, const R& r)                           \
+    {                                                                                               \
+        return detail::operation                                                                    \
+        {                                                                                           \
+            [](const auto& a, const auto& b) { return a op b; },                                    \
+            l, r                                                                                    \
+        };                                                                                          \
+                                                                                                    \
+    }                                                                                               \
+    template<class L, class R, class = std::enable_if_t<traits::is_valid_operation_v<L, R, true>>>  \
+    constexpr inline _DD_OPERATION_T operator op##=(L& l, const R& r)                               \
+    {                                                                                               \
+        return l = l op r;                                                                          \
+    }                                                                                               \
 
-#define _DD_OPERATION_T auto // defined for explicit return types
-#define _DD_APPLY_WRAPPER(fn) apply([](const scalar_t& v) { return fn(v); }) // wrapper to select the correct function overload
-#define _DD_TEMPLATE_CONSTRAINT(ty, constraint) template<class ty, class = std::enable_if_t<constraint>>
-
-#define _DD_COMPONENT_DEFINES(str)                                                               \
-        static constexpr char _names_str[] = str;                                                \
-        constexpr component_names& operator= (const component_names&) noexcept { return *this; } \
-
-#define _DD_BASE_COMMON_DEFINES                               \
-    public:                                                   \
-        using result_t = traits::result_t<CHILD>;             \
-        using scalar_t = traits::scalar_t<CHILD>;             \
-        static constexpr size_t size = traits::size_v<CHILD>; \
-    private:                                                  \
-        inline constexpr const CHILD& _child() const          \
-        {                                                     \
-            return static_cast<const CHILD&>(*this);          \
-        }                                                     \
-                                                              \
-        inline constexpr scalar_t _value(size_t i) const      \
-        {                                                     \
-            return _child()[i];                               \
-        }                                                     \
-    public:                                                   \
-
-#define _DD_DEFINE_BINARY_OPERATOR(op, strict_ordering)                                                       \
-    template<class L, class R, class = std::enable_if_t<traits::is_valid_operation_v<L, R, strict_ordering>>> \
-    constexpr inline _DD_OPERATION_T operator op (const L& l, const R& r)                                     \
-    {                                                                                                         \
-        return expr::operation                                                                                \
-        {                                                                                                     \
-            [](const auto& a, const auto& b) { return a op b; },                                              \
-            l, r                                                                                              \
-        };                                                                                                    \
-                                                                                                              \
-    }                                                                                                         \
-    template<class L, class R, class = std::enable_if_t<traits::is_valid_operation_v<L, R, true>>>            \
-    constexpr inline _DD_OPERATION_T operator op##=(L& l, const R& r)                                         \
-    {                                                                                                         \
-        return l = l op r;                                                                                    \
-    }                                                                                                         \
-
-#define _DD_DEFINE_UNARY_OPERATOR(op)                                 \
-    template<class E, class = std::enable_if_t<traits::is_expr_v<E>>> \
-    constexpr inline _DD_OPERATION_T operator op (const E& e)         \
-    {                                                                 \
-        return expr::operation                                        \
-        {                                                             \
-            [](const auto& v) { return op(v); },                      \
-            e                                                         \
-        };                                                            \
-    }                                                                 \
-
-#define _DD_DEFINE_VECTOR_ALIAS(ty, ty_name, size) using ty_name##size##d = vector<ty, size>;
-#define _DD_DEFINE_VECTOR_SIZE_ALIASES(size)              \
-    _DD_DEFINE_VECTOR_ALIAS(bool,          binary, size); \
-    _DD_DEFINE_VECTOR_ALIAS(char,          char,   size); \
-    _DD_DEFINE_VECTOR_ALIAS(unsigned char, uchar,  size); \
-    _DD_DEFINE_VECTOR_ALIAS(int,           int,    size); \
-    _DD_DEFINE_VECTOR_ALIAS(unsigned int,  uint,   size); \
-    _DD_DEFINE_VECTOR_ALIAS(float,         float,  size); \
-    _DD_DEFINE_VECTOR_ALIAS(double,        double, size); \
+#define _DD_DEFINE_UNARY_OPERATOR(op)                                             \
+    template<class Expr, class = std::enable_if_t<traits::is_expression_v<Expr>>> \
+    constexpr inline _DD_OPERATION_T operator op (const Expr& expr)               \
+    {                                                                             \
+        return detail::operation                                                  \
+        {                                                                         \
+            [](const auto& v) { return op(v); },                                  \
+            expr                                                                  \
+        };                                                                        \
+    }                                                                             \
 
 
 _DD_NAMESPACE_OPEN
 
 
-/*
- *  DD_ENABLE_NAMES
- *    define DD_ENABLE_NAMES 0 to disable named vector components
-*/
+/// @brief Define as 0 to disable named vector components
 #ifndef DD_ENABLE_NAMES
 #define DD_ENABLE_NAMES 1
 #endif
 
-/*
- *  forward declares
- *    used by traits
-*/
-namespace expr
+namespace detail
 {
     template<class>
-    struct base;
+    struct expression_base;
+
+    template<class, size_t>
+    struct expression;
 
     template<class, class...>
     struct operation;
+
+    template<class, size_t, bool>
+    struct component_names;
 
     template<class, size_t>
     struct value;
 }
 
-/*
- *  converter
- *    interface to enable conversions between vector and arbitrary user types
-*/
-template<class, class>
-struct converter {};
+/// @brief Interface to convert between a dandy vector type and an arbitrary foreign type
+/// @param Dandy A dandy vector type
+/// @param Foreign A foreign type
+/// 
+/// @note
+///     - The Foreign type has to be default constructable
+///     - There is currently no mechanism to allow only one way of the conversion
+template<class Dandy, class Foreign>
+struct converter;
 
 namespace traits
 {
-    /*
-     *  size
-     *    gets the vector size of expression T
-    */
-    template<class>
-    struct size : std::integral_constant<size_t, 1> {};
-
-    template<class OP, class... ARGS>
-    struct size<expr::operation<OP, ARGS...>> : std::integral_constant<size_t, std::max({ size<ARGS>::value... })> {};
-
-    template<class S, size_t N>
-    struct size<expr::value<S, N>> : std::integral_constant<size_t, N> {};
-
     template<class T>
-    inline constexpr size_t size_v = size<T>::value;
+    struct type_identity
+    {
+        using type = T;
+    };
 
-    /*
-     *  scalar
-     *    gets the scalar type of expression T
-    */
-    template<class S>
-    struct scalar : std::common_type<S> {};
-
-    template<class OP, class... ARGS>
-    struct scalar<expr::operation<OP, ARGS...>> : std::invoke_result<OP, typename scalar<ARGS>::type...> {};
-
-    template<class S, size_t N>
-    struct scalar<expr::value<S, N>> : std::common_type<S> {};
-
+    /// @var is_value_v
+    /// @brief Determines if a type is a vector value type
     template<class T>
-    using scalar_t = typename scalar<T>::type;
-    
-    /*
-     *  result
-     *    gets the resulting vector value of expression T
-    */
-    template<class>
-    struct result {};
-
-    template<class OP, class... ARGS>
-    struct result<expr::operation<OP, ARGS...>> : std::common_type<expr::value<scalar_t<expr::operation<OP, ARGS...>>, size_v<expr::operation<OP, ARGS...>>>> {};
-
-    template<class S, size_t N>
-    struct result<expr::value<S, N>> : std::common_type<expr::value<S, N>> {};
-
-    template<class T>
-    using result_t = typename result<T>::type;
-
-    /*
-     *  is_expr
-     *    determines if T is a vector expression
-    */
-    template<class T>
-    struct is_expr : std::is_base_of<expr::base<T>, T> {};
-
-    template<class T>
-    inline constexpr bool is_expr_v = is_expr<T>::value;
-
-    /*
-     *  is_same_size
-     *    determines if T and U are both expressions of the same size
-    */
-    template<class T, class U>
-    struct is_same_size : std::conjunction<is_expr<T>, is_expr<U>, std::bool_constant<size_v<T> == size_v<U>>> {};
-
-    template<class T, class U>
-    inline constexpr bool is_same_size_v = is_same_size<T, U>::value;
-
-    /*
-     *  is valid operation
-     *    determines if T and U make up a valid operation
-     *    STRICT_ORDERING = true forbids a scalar type from appearing first
-    */
-    template<class L, class R, bool STRICT_ORDERING>
-    struct is_valid_operation
-        : std::bool_constant<is_same_size_v<L, R>                                         ||
-                             is_expr_v<L> && std::is_arithmetic_v<R>                      ||
-                             std::is_arithmetic_v<L> && is_expr_v<R> && !STRICT_ORDERING> {};
-    
-    template<class L, class R, bool STRICT_ORDERING>
-    inline constexpr bool is_valid_operation_v = is_valid_operation<L, R, STRICT_ORDERING>::value;
-
-    /*
-     *  is value
-     *    determines if T is a value expression
-    */
-    template<class>
     struct is_value : std::false_type {};
 
-    template<class S, size_t N>
-    struct is_value<expr::value<S, N>> : std::true_type {};
+    template<class Scalar, size_t Size>
+    struct is_value<detail::value<Scalar, Size>> : std::true_type {};
 
     template<class T>
     inline constexpr bool is_value_v = is_value<T>::value;
 
-    /*
-     *  has named components
-     *    determines if T has named components
-    */
-    template<class, class = void>
+    /// @var is_operation_v
+    /// @brief Determines if a type is a vector operation type
+    template<class T>
+    struct is_operation : std::false_type {};
+
+    template<class Op_fn, class... Operands>
+    struct is_operation<detail::operation<Op_fn, Operands...>> : std::true_type {};
+
+    template<class T>
+    inline constexpr bool is_operation_v = is_operation<T>::value;
+
+    /// @var is_expression_v
+    /// @brief Determines if a type is a vector operation type
+    template<class T>
+    struct is_expression : std::disjunction<is_value<T>, is_operation<T>> {};
+
+    template<class T>
+    inline constexpr bool is_expression_v = is_expression<T>::value;
+
+    /// @typedef scalar_t
+    /// @brief Gets the scalar type of the vector expression
+    /// @details For vector operations, this is set to the result type of the operation function
+    ///          when called with the operation operands
+    template<class Scalar>
+    struct scalar : type_identity<Scalar> {};
+
+    template<class Op_fn, class... Operands>
+    struct scalar<detail::operation<Op_fn, Operands...>> : std::invoke_result<Op_fn, typename scalar<Operands>::type...> {};
+
+    template<class Scalar, size_t Size>
+    struct scalar<detail::value<Scalar, Size>> : type_identity<Scalar> {};
+
+    template<class Expr>
+    using scalar_t = typename scalar<Expr>::type;
+
+    /// @var size_v
+    /// @brief Gets the size of the vector expression
+    /// @details For vector operations, this is set to the max size of its operands
+    template<class>
+    struct size : std::integral_constant<size_t, 1> {};
+
+    template<class Op_fn, class... Operands>
+    struct size<detail::operation<Op_fn, Operands...>> : std::integral_constant<size_t, std::max({ size<Operands>::value... })> {};
+
+    template<class Scalar, size_t Size>
+    struct size<detail::value<Scalar, Size>> : std::integral_constant<size_t, Size> {};
+
+    template<class Expr>
+    inline constexpr size_t size_v = size<Expr>::value;
+    
+    /// @typedef vector_t
+    /// @brief Gets the resulting vector type of the vector expression
+    template<class Expr, class = std::enable_if_t<is_expression_v<Expr>>>
+    struct _vector : type_identity<detail::value<scalar_t<Expr>, size_v<Expr>>> {};
+
+    template<class Expr>
+    struct vector : _vector<Expr> {};
+
+    template<class Expr>
+    using vector_t = typename vector<Expr>::type;
+
+    /// @var is_same_size_v
+    /// @brief Determines if two types are vector expressions of the same size
+    template<class T, class U>
+    struct is_same_size : std::conjunction<is_expression<T>, is_expression<U>, std::bool_constant<size_v<T> == size_v<U>>> {};
+
+    template<class T, class U>
+    inline constexpr bool is_same_size_v = is_same_size<T, U>::value;
+
+    /// @var is_valid_operation_v
+    /// @brief Determines if two types form a valid vector operation
+    /// @param Strict_ordering A value of true forbids a scalar type from appearing first in
+    ///                        the operation
+    template<class L, class R, bool Strict_ordering>
+    struct is_valid_operation
+        : std::bool_constant<(is_same_size_v<L, R>)                                               ||
+                             (is_expression_v<L> && std::is_arithmetic_v<R>)                      ||
+                             (std::is_arithmetic_v<L> && is_expression_v<R> && !Strict_ordering)> {};
+    
+    template<class L, class R, bool Strict_ordering>
+    inline constexpr bool is_valid_operation_v = is_valid_operation<L, R, Strict_ordering>::value;
+
+    /// @var has_named_components_v
+    /// @brief Determines if a vector value has named vector components
+    template<class>
     struct has_named_components : std::false_type {};
 
-    template<class T>
-    struct has_named_components<T, std::void_t<decltype(T::_names_str)>> : std::true_type {};
-
-    template<class T>
-    inline constexpr bool has_named_components_v = has_named_components<T>::value;
+    template<class Scalar, size_t Size>
+    struct has_named_components<detail::value<Scalar, Size>> : std::is_base_of<detail::component_names<Scalar, Size, true>, detail::value<Scalar, Size>> {};
     
-    /*
-     *  has_converter
-     *    determines if there is a converter specialization defined from T to U
-    */
+    template<class Expr>
+    inline constexpr bool has_named_components_v = has_named_components<Expr>::value;
+    
+    /// @var has_converter_v
+    /// @brief Determines if a there is a converter specilization defined between two types
     template<class, class, class = void>
     struct has_converter : std::false_type {};
 
     template<class T, class U>
-    struct has_converter<T, U, std::void_t<decltype(converter<T, U>::from(std::declval<T>()))>> : std::true_type {};
+    struct has_converter<T, U, std::void_t<
+        decltype(converter<T, U>::convert(std::declval<T>(), std::declval<U&>())),  // has T -> U
+        decltype(converter<T, U>::convert(std::declval<U>(), std::declval<T&>()))>> // has U -> T
+    : std::true_type {};
 
     template<class T, class U>
     inline constexpr bool has_converter_v = has_converter<T, U>::value;
 }
 
-namespace expr
+namespace detail
 {
-    /*
-     *  operator overloads
-    */
-    _DD_DEFINE_BINARY_OPERATOR(+,  false);
-    _DD_DEFINE_BINARY_OPERATOR(-,  false);
-    _DD_DEFINE_BINARY_OPERATOR(*,  false);
-    _DD_DEFINE_BINARY_OPERATOR(/,  false);
-    _DD_DEFINE_BINARY_OPERATOR(%,  false);
-    _DD_DEFINE_BINARY_OPERATOR(&,  false);
-    _DD_DEFINE_BINARY_OPERATOR(|,  false);
-    _DD_DEFINE_BINARY_OPERATOR(^,  false);
-    _DD_DEFINE_BINARY_OPERATOR(>>, true);
-    _DD_DEFINE_BINARY_OPERATOR(<<, true);
+    _DD_DEFINE_BINARY_OPERATOR(+);
+    _DD_DEFINE_BINARY_OPERATOR(-);
+    _DD_DEFINE_BINARY_OPERATOR(*);
+    _DD_DEFINE_BINARY_OPERATOR(/);
+    _DD_DEFINE_BINARY_OPERATOR(%);
+    _DD_DEFINE_BINARY_OPERATOR(&);
+    _DD_DEFINE_BINARY_OPERATOR(|);
+    _DD_DEFINE_BINARY_OPERATOR(^);
+    _DD_DEFINE_BINARY_OPERATOR(>>);
+    _DD_DEFINE_BINARY_OPERATOR(<<);
 
     _DD_DEFINE_UNARY_OPERATOR(+);
     _DD_DEFINE_UNARY_OPERATOR(-);
     _DD_DEFINE_UNARY_OPERATOR(~);
-
-    /*
-     *  base specialization
-     *    provides size specific functionality to base
-    */
-    template<class, size_t>
-    struct base_spec {};
-
-    template<class CHILD>
-    struct base_spec<CHILD, 2>
+    
+    /// @brief Provides all size-agnostic in-class functionality for vector expressions
+    /// @param Child The child vector expression type, for use in CRTP
+    template<class Child>
+    struct expression_base
     {
-        _DD_BASE_COMMON_DEFINES
-
-        double angle() const noexcept
+    protected:
+        using scalar_t = typename traits::scalar_t<Child>;
+        using vector_t = typename traits::vector_t<Child>;
+        constexpr static size_t size = traits::size_v<Child>;
+    public:
+        template<class Expr, class = std::enable_if_t<traits::is_same_size_v<Expr, Child>>>
+        constexpr bool operator==(const Expr& expr) const noexcept
         {
-            return std::atan2((double)_value(1), _value(0));
+            for (size_t i = 0; i < size; i++)
+            {
+                if (get(i) != expr[i])
+                    return false;
+            }
+            return true;
         }
 
-        static result_t from_angle(double angle) noexcept
+        template<class Expr, class = std::enable_if_t<traits::is_same_size_v<Expr, Child>>>
+        constexpr bool operator!=(const Expr& expr) const noexcept
+        {
+            return !operator==(expr);
+        }
+
+        template<class Other, class = std::enable_if_t<traits::has_converter_v<vector_t, Other>>>
+        inline operator Other() const
+        {
+            Other other;
+
+            if constexpr(traits::is_value_v<Child>)
+                converter<vector_t, Other>::convert(_child(), other);
+            else
+                converter<vector_t, Other>::convert(_child().evaluate(), other);
+            return other;
+        }
+        
+        constexpr explicit operator bool() const noexcept
+        {
+            return nonzero();
+        }
+
+        ///  @brief Gets the component at specified index
+        constexpr inline scalar_t get(size_t index) const
+        {
+            return _child()[index];
+        }
+
+        /// @brief Sums all components
+        constexpr scalar_t sum() const noexcept
+        {
+            scalar_t out = 0;
+
+            for (size_t i = 0; i < size; i++)
+                out += get(i);
+            return out;
+        }
+
+        /// @brief Multiplies all components
+        constexpr scalar_t product() const noexcept
+        {
+            scalar_t out = 1;
+
+            for (size_t i = 0; i < size; i++)
+                out *= get(i);
+            return out;
+        }
+
+        /// @brief Determines if vector is non-zero, that is if the vector has a non-zero component
+        constexpr bool nonzero() const noexcept
+        {
+            for (size_t i = 0; i < size; i++)
+            {
+                if (get(i))
+                    return true;
+            }
+            return false;
+        }
+
+        /// @brief Calculates the dot product with another vector expression
+        template<class Expr, class = std::enable_if_t<traits::is_same_size_v<Expr, Child>>>
+        constexpr scalar_t dot(const Expr& expr) const noexcept
+        {
+            scalar_t out = 0;
+
+            for (size_t i = 0; i < size; i++)
+                out += get(i) * expr[i];
+            return out;
+        }
+
+        /// @brief Calculates the Euclidian length squared
+        constexpr scalar_t length2() const noexcept
+        {
+            return dot(_child());
+        }
+
+        /// @brief Calculates the Euclidian length
+        /// @details Analagous to writing ``std::sqrt(vector.length2())``
+        double length() const
+        {
+            return std::sqrt((double)length2());
+        }
+
+        /// @brief Calculates the Euclidian distance to another vector expression squared
+        template<class Expr, class = std::enable_if_t<traits::is_same_size_v<Expr, Child>>>
+        constexpr scalar_t distance2(const Expr& expr) const noexcept
+        {
+            return (_child() - expr).length2();
+        }
+
+        /// @brief Calculates the Euclidian distance to another vector expression
+        /// @details Analagous to writing ``std::sqrt(vector.distance2())``
+        template<class Expr, class = std::enable_if_t<traits::is_same_size_v<Expr, Child>>>
+        constexpr double distance(const Expr& expr) const
+        {
+            return std::sqrt((double)distance2(expr));
+        }
+
+        /// @brief Calculates the normalized vector
+        /// @details Analagous to writing ``vector / vector.length()`` 
+        value<double, size> normalize() const
+        {
+            return _child() / length();
+        }
+
+        /// @brief Sets the Euclidian length
+        /// @details Analogous to writing ``vector.normalize() * length``
+        value<double, size> set_length(double length) const noexcept
+        {
+            return normalize() * length;
+        }
+
+        /// @brief Calculates the delta angle to another vector
+        template<class Expr, class = std::enable_if_t<traits::is_same_size_v<Expr, Child>>>
+        double delta_angle(const Expr& expr) const
+        {
+            return std::acos(dot(expr) / std::sqrt((double)length2() * expr.length2()));
+        }
+
+        /// @brief Creates an operation to apply a function to all components
+        template<class Fn, class = std::enable_if_t<std::is_invocable_v<Fn, scalar_t>>>
+        inline constexpr _DD_OPERATION_T apply(const Fn& fn) const noexcept
+        {
+            return operation{ fn, _child() };
+        }
+
+        /// @brief Creates an operation to take the absolute value of each component
+        inline constexpr _DD_OPERATION_T abs() const noexcept
+        {
+            return apply([](scalar_t v) { return std::abs(v); });
+        }
+
+        /// @brief Creates an operation to round each component
+        inline constexpr _DD_OPERATION_T round() const noexcept
+        {
+            return apply([](scalar_t v) { return std::round(v); });
+        }
+
+        /// @brief Creates an operation to floor each component
+        inline constexpr _DD_OPERATION_T floor() const noexcept
+        {
+            return apply([](scalar_t v) { return std::floor(v); });
+        }
+
+        /// @brief Creates an operation to ceil each component
+        inline constexpr _DD_OPERATION_T ceil() const noexcept
+        {
+            return apply([](scalar_t v) { return std::ceil(v); });
+        }
+
+        /// @brief Creates an operation to cast each component
+        template<class Scalar, class = std::enable_if_t<std::is_arithmetic_v<Scalar>>>
+        inline constexpr _DD_OPERATION_T scalar_cast() const noexcept
+        {
+            return apply([](scalar_t v) { return (Scalar)v; });
+        }
+
+        /// @brief Serializes the vector to a string
+        /// @param name Can be provided to differentiate between multiple vector values
+        std::string to_string(const std::string& name = "") const noexcept
+        {
+            std::string out = name + "(";
+
+            for (size_t i = 0; i < size; i++)
+            {
+                out += std::to_string(get(i));
+
+                if (i < (size - 1)) [[likely]]
+                    out += ", ";
+            }
+            return out + ")";
+        }
+    protected:
+        constexpr inline const Child& _child() const noexcept
+        {
+            return static_cast<const Child&>(*this);
+        }
+    };
+
+    /// @defgroup Expressions
+    /// @brief Provides all in-class functionality to vector expressions
+    /// @param Child The child vector expression type, for use in CRTP
+    template<class Child, size_t Child_size = traits::size_v<Child>>
+    struct expression : expression_base<Child> {};
+
+    /// @ingroup Expressions
+    /// @brief Adds functionality for 2D vector expressions
+    template<class Child>
+    struct expression<Child, 2> : expression_base<Child>
+    {
+    protected:
+        using base = expression_base<Child>;
+        using typename base::vector_t;
+    public:
+        /// @brief Calculates the angle represented by the vector expression
+        double angle() const noexcept
+        {
+            return std::atan2(base::get(1), base::get(0));
+        }
+
+        /// @brief Constructs the vector value representation of an angle
+        static vector_t from_angle(double angle) noexcept
         {
             return
             {
@@ -279,411 +453,269 @@ namespace expr
         }
     };
 
-    template<class CHILD>
-    struct base_spec<CHILD, 3>
+    /// @ingroup Expressions
+    /// @brief Adds functionality for 3D vector expressions
+    template<class Child>
+    struct expression<Child, 3> : expression_base<Child>
     {
-        _DD_BASE_COMMON_DEFINES
-
-        _DD_TEMPLATE_CONSTRAINT(E, (traits::is_same_size_v<E, CHILD>))
-        constexpr result_t cross(const E& e) const noexcept
+    protected:
+        using base = expression_base<Child>;
+        using typename base::vector_t;
+    public:
+        /// @brief Calculates the cross product with another vector expression
+        template<class Expr, class = std::enable_if_t<traits::is_same_size_v<Expr, Child>>>
+        constexpr vector_t cross(const Expr& expr) const noexcept
         {
             return
             {
-                _value(1) * e[2] - _value(2) * e[1],
-                _value(2) * e[0] - _value(0) * e[2],
-                _value(0) * e[1] - _value(1) * e[0]
+                base::get(1) * expr[2] - base::get(2) * expr[1],
+                base::get(2) * expr[0] - base::get(0) * expr[2],
+                base::get(0) * expr[1] - base::get(1) * expr[0]
             };
         }
     };
-
-    /*
-     *  base
-     *    provides in-class functionality for expressions
-    */
-    template<class CHILD>
-    struct base : base_spec<CHILD, traits::size_v<CHILD>>
-    {
-        _DD_BASE_COMMON_DEFINES
-        
-        /*
-         *  operators
-        */
-
-        _DD_TEMPLATE_CONSTRAINT(E, (traits::is_same_size_v<E, CHILD>))
-        constexpr bool operator==(const E& e) const noexcept
-        {
-            for (size_t i = 0; i < size; i++)
-            {
-                if (_value(i) != e[i])
-                    return false;
-            }
-            return true;
-        }
-
-        _DD_TEMPLATE_CONSTRAINT(E, (traits::is_same_size_v<E, CHILD>))
-        constexpr bool operator!=(const E& e) const noexcept
-        {
-            return !operator==(e);
-        }
-
-        _DD_TEMPLATE_CONSTRAINT(T, (traits::has_converter_v<result_t, T>))
-        inline operator T() const
-        {
-            if constexpr(traits::is_value_v<CHILD>)
-                return converter<result_t, T>::from(_child());
-            else
-                return converter<result_t, T>::from(_child().evaluate());
-        }
-
-        constexpr explicit operator bool() const noexcept
-        {
-            for (size_t i = 0; i < size; i++)
-            {
-                if (_value(i))
-                    return true;
-            }
-            return false;
-        }
-
-        /*
-         *  math
-        */
-
-        constexpr scalar_t sum() const noexcept
-        {
-            scalar_t out = 0;
-
-            for (size_t i = 0; i < size; i++)
-                out += _value(i);
-            return out;
-        }
-
-        constexpr scalar_t product() const noexcept
-        {
-            scalar_t out = 1;
-
-            for (size_t i = 0; i < size; i++)
-                out *= _value(i);
-            return out;
-        }
-
-        constexpr bool nonzero() const noexcept
-        {
-            return operator bool();
-        }
-
-        _DD_TEMPLATE_CONSTRAINT(E, (traits::is_same_size_v<E, CHILD>))
-        constexpr scalar_t dot(const E& e) const noexcept
-        {
-            scalar_t out = 0;
-
-            for (size_t i = 0; i < size; i++)
-                out += _value(i) * e[i];
-            return out;
-        }
-
-        constexpr scalar_t length2() const noexcept
-        {
-            return dot(_child());
-        }
-
-        double length() const
-        {
-            return std::sqrt((double)length2());
-        }
-
-        _DD_TEMPLATE_CONSTRAINT(E, (traits::is_same_size_v<E, CHILD>))
-        constexpr scalar_t distance2(const E& e) const noexcept
-        {
-            return (_child() - e).length2();
-        }
-
-        _DD_TEMPLATE_CONSTRAINT(E, (traits::is_same_size_v<E, CHILD>))
-        constexpr double distance(const E& e) const
-        {
-            return std::sqrt((double)distance2(e));
-        }
-
-        value<double, size> normalize() const
-        {
-            return _child() / length();
-        }
-
-        value<double, size> set_length(double l) const noexcept
-        {
-            return normalize() * l;
-        }
-
-        _DD_TEMPLATE_CONSTRAINT(E, (traits::is_same_size_v<E, CHILD>))
-        double delta_angle(const E& e) const
-        {
-            return std::acos(dot(e) / std::sqrt((double)length2() * e.length2()));
-        }
-
-        _DD_TEMPLATE_CONSTRAINT(FN, (std::is_invocable_v<FN, scalar_t>))
-        inline constexpr _DD_OPERATION_T apply(const FN& fn) const noexcept
-        {
-            return operation{ fn, _child() };
-        }
-
-        inline constexpr _DD_OPERATION_T abs() const noexcept
-        {
-            return _DD_APPLY_WRAPPER(std::abs);
-        }
-
-        inline constexpr _DD_OPERATION_T round() const noexcept
-        {
-            return _DD_APPLY_WRAPPER(std::round);
-        }
-
-        inline constexpr _DD_OPERATION_T floor() const noexcept
-        {
-            return _DD_APPLY_WRAPPER(std::floor);
-        }
-
-        inline constexpr _DD_OPERATION_T ceil() const noexcept
-        {
-            return _DD_APPLY_WRAPPER(std::ceil);
-        }
-
-        _DD_TEMPLATE_CONSTRAINT(S, std::is_arithmetic_v<S>)
-        inline constexpr _DD_OPERATION_T scalar_cast() const noexcept
-        {
-            return _DD_APPLY_WRAPPER(S);
-        }
-    };
     
-    /*
-     *  operation
-     *    expressions involving and operation and at least one other expression
-     *    each component is evaluated in operator[]
-    */
-    template<class OP, class... ARGS>
-    struct operation : base<operation<OP, ARGS...>>
+    /// @brief Acts as an intermediary type for operations involving expressions
+    /// @param Op_fn The function type to apply to the operands
+    /// @param Operands Types of the operands
+    template<class Op_fn, class... Operands>
+    struct operation : expression<operation<Op_fn, Operands...>>
     {
     private:
-        const std::tuple<const ARGS&...> _args;
-        const OP& _op;
+        using base = expression<operation>;
+    public:
+        using typename base::scalar_t;
+        using typename base::vector_t;
+        using base::size;
+        
+        /// @brief Constructs a vector operation from a function and operands
+        operation(const Op_fn& op, const Operands&... args) noexcept : _operands(args...), _op(op) {}
+
+        /// @brief Evaluates component at an index
+        inline constexpr scalar_t operator[](size_t index) const
+        {
+            auto evaulate_index = [&](const Operands&... args)
+            {
+                return _op(_get_operand_at(args, index)...);
+            };
+            return std::apply(evaulate_index, _operands);
+        }
+
+        /// @brief Evaluates vector operation to a vector value
+        constexpr vector_t operator*() const noexcept
+        {
+            return evaluate();
+        }
+
+        /// @brief Evaluates vector operation to a vector value
+        constexpr vector_t evaluate() const noexcept
+        {
+            return (vector_t)*this; // call the value constructor
+        }
+    private:
+        const std::tuple<const Operands&...> _operands;
+        const Op_fn& _op;
 
         template<class T>
-        static inline constexpr traits::scalar_t<operation> _get_operand_at(const T& value, size_t i)
+        static inline constexpr scalar_t _get_operand_at(const T& value, size_t index)
         {
-            if constexpr(traits::is_expr_v<T>)
-                return value[i];
+            if constexpr(traits::is_expression_v<T>)
+                return value[index];
             else
                 return value;
         }
-    public:
-        /*
-         *  ctors
-        */
-
-        operation(const OP& op, const ARGS&... args) noexcept : _op(op), _args(args...) {}
-
-        /*
-         *  operators
-        */
-
-        inline constexpr traits::scalar_t<operation> operator[](size_t i) const
-        {
-            auto evaulate_index = [&](const ARGS&... args)
-            {
-                return _op(_get_operand_at(args, i)...);
-            };
-            return std::apply(evaulate_index, _args);
-        }
-
-        constexpr traits::result_t<operation> operator*() const noexcept
-        {
-            return *this;
-        }
-
-        /*
-         *  utility
-        */
-
-        constexpr traits::result_t<operation> evaluate() const noexcept
-        {
-            return operator*();
-        }
-
-        std::string to_string() const noexcept
-        {
-            return evaluate().to_string();
-        }
     };
     
-    /*
-     *  component_names
-     *    provides named components (e.g. x, y) for value expressions
-     *    for performance reasons, can be disabled by defining DD_ENABLE_NAMES 0
-    */
-    template<class S, size_t, bool = DD_ENABLE_NAMES>
+    /// @defgroup ComponentNames
+    /// @brief These specializations provide the named vector components to vector values
+    ///        (e.g. vector.x, vector.y).
+    /// @details Each component is a reference to the value at its associated index in the
+    ///          `value::data` array
+    template<class Scalar, size_t Size, bool = DD_ENABLE_NAMES>
     struct component_names
     {
-        constexpr component_names(S*) noexcept {}
+        constexpr component_names(Scalar*) noexcept {}
     };
 
-    template<class S>
-    struct component_names<S, 2, true>
+    /// @ingroup ComponentNames
+    template<class Scalar>
+    struct component_names<Scalar, 2, true>
     {
-        _DD_COMPONENT_DEFINES("xy")
+        /// @brief The ``X`` component
+        Scalar& x;
 
-        S& x;
-        S& y;
+        /// @brief The ``Y`` component
+        Scalar& y;
 
-        constexpr component_names(S data[2]) noexcept : x(data[0]), y(data[1]) {}
+        constexpr component_names(Scalar data[2]) noexcept : x(data[0]), y(data[1]) {}
+        constexpr component_names& operator=(const component_names&) noexcept { return *this; }
     };
 
-    template<class S>
-    struct component_names<S, 3, true> : component_names<S, 2>
+    /// @ingroup ComponentNames
+    template<class Scalar>
+    struct component_names<Scalar, 3, true> : component_names<Scalar, 2>
     {
-        _DD_COMPONENT_DEFINES("xyz")
+        /// @brief The ``Z`` component
+        Scalar& z;
 
-        S& z;
-
-        constexpr component_names(S data[3]) noexcept : component_names<S, 2>(data), z(data[2]) {}
+        constexpr component_names(Scalar data[3]) noexcept : component_names<Scalar, 2>(data), z(data[2]) {}
+        constexpr component_names& operator=(const component_names&) noexcept { return *this; }
     };
 
-    template<class S>
-    struct component_names<S, 4, true> : component_names<S, 3>
+    /// @ingroup ComponentNames
+    template<class Scalar>
+    struct component_names<Scalar, 4, true> : component_names<Scalar, 3>
     {
-        _DD_COMPONENT_DEFINES("xyzw")
+        /// @brief The ``W`` component
+        Scalar& w;
 
-        S& w;
-
-        constexpr component_names(S data[4]) noexcept : component_names<S, 3>(data), w(data[3]) {}
+        constexpr component_names(Scalar data[4]) noexcept : component_names<Scalar, 3>(data), w(data[3]) {}
+        constexpr component_names& operator=(const component_names&) noexcept { return *this; }
     };
-
-    /*
-     *  value
-     *    an expression containing a single vector value
-    */
-    template<class S, size_t N>
-    struct value : base<value<S, N>>, component_names<S, N>
+    
+    /// @brief A vector expression containing a single vector value
+    /// @param Scalar The scalar type of the vector
+    /// @param Size The size of the vector
+    template<class Scalar, size_t Size>
+    struct value : expression<value<Scalar, Size>>, component_names<Scalar, Size>
     {
-        static_assert(std::is_arithmetic_v<S> && (N > 1), "Invalid vector scalar_t or size");
+        static_assert(std::is_arithmetic_v<Scalar> && (Size > 1), "Invalid vector scalar_t or size");
+    private:
+        using base = expression<value>;
+        using component_names = component_names<Scalar, Size>;
+    public:
 
-        using names_t = component_names<S, N>;
+        /// @brief The scalar type of the value
+        using typename base::scalar_t;
 
+        /// @brief The vector type of the value
+        using typename base::vector_t;
+
+        /// @brief The vector size of the value
+        using base::size;
+
+        /// @brief Vector value filled with zeroes
         const static value zero;
+
+        /// @brief Vector value filled with ones
         const static value identity;
 
-        S data[N];
+        /// @brief Houses the data for the vector value
+        scalar_t data[size];
         
-        /*
-         *  ctors
-        */
+        /// @brief Default constructs the vector value
+        /// @details All components will be initialized to 0
+        constexpr value() noexcept : component_names(data), data{} {}
 
-        // default ctor - initializes all components to zero
-        constexpr value() noexcept : data{}, names_t(data) {}
+        /// @brief Constructs a vector value from individual component values
+        /// @details Expects as many arguments as the vector size and that each argument
+        ///          is convertible to the vector scalar type
+        template<class... Scalars, class = std::enable_if_t<sizeof...(Scalars) == Size && std::conjunction_v<std::is_convertible<Scalars, scalar_t>...>>>
+        constexpr value(const Scalars&... args) noexcept : component_names(data), data{ (scalar_t)args... } {}
 
-        // value ctor (1) - initialize all components individually
-        _DD_TEMPLATE_CONSTRAINT(...ARGS, (sizeof...(ARGS) == N && std::conjunction_v<std::is_convertible<ARGS, S>...>))
-        constexpr value(const ARGS&... args) noexcept : data{ (S)args... }, names_t(data) {}
-
-        // value ctor (2) - initialize all components to the same value
-        constexpr explicit value(S v) noexcept : names_t(data)
+        /// @brief Constructs a vector value from a single repeated value
+        /// @details All components will be initialized to v
+        constexpr explicit value(scalar_t scalar) noexcept : component_names(data)
         {
-            for (size_t i = 0; i < N; i++)
-                data[i] = v;
+            for (size_t i = 0; i < Size; i++)
+                data[i] = scalar;
         }
 
-        // copy ctor - copy values from another value expression
-        //   required explicitly to ensure names_t is initialized properly
-        constexpr value(const value& other) noexcept : names_t(data)
+        /// @brief Copies component values from another vector value of the same type
+        /// @details This function is required explicitly to ensure component_names is
+        ///          initialized properly
+        constexpr value(const value& other) noexcept : component_names(data)
         {
             assign(other);
         }
 
-        // conversion ctor - get values from a different type of vector
-        _DD_TEMPLATE_CONSTRAINT(T, (traits::is_same_size_v<value, T> || traits::has_converter_v<value, T>))
-        constexpr value(const T& v) : names_t(data)
+        /// @brief Copies component values from a different type
+        /// @details Vector values are copied normally. Vector operations are evaluated and copied.
+        ///          Foreign types with a converter specialization defined are converted and then copied.
+        template<class Other, class = std::enable_if_t<traits::is_same_size_v<value, Other> || traits::has_converter_v<value, Other>>>
+        constexpr value(const Other& other) : component_names(data)
         {
-            if constexpr(traits::is_same_size_v<value, T>)
-                assign(v);
+            if constexpr(traits::is_same_size_v<value, Other>)
+                assign(other);
             else
-                assign(converter<value, T>::from(v));
+                converter<value, Other>::convert(other, *this);
         }
-        
-        /*
-         *  operators
-        */
 
-        _DD_TEMPLATE_CONSTRAINT(E, (traits::is_same_size_v<value, E>))
-        inline constexpr value& operator=(const E& e)
+        /// @brief Copy assignment operator
+        template<class Expr, class = std::enable_if_t<traits::is_same_size_v<value, Expr>>>
+        inline constexpr value& operator=(const Expr& expr)
         {
-            assign(e);
+            assign(expr);
             return *this;
         }
 
-        inline constexpr S operator[](size_t i) const noexcept
+        /// @brief Gets the component value at an index
+        inline constexpr scalar_t operator[](size_t index) const noexcept
         {
-            return data[i];
+            return data[index];
         }
 
-        inline constexpr S& operator[](size_t i) noexcept
+        /// @brief Gets a reference to the component at an index
+        inline constexpr scalar_t& operator[](size_t index) noexcept
         {
-            return data[i];
+            return data[index];
         }
 
-        /*
-         *  utility
-        */
-
-        _DD_TEMPLATE_CONSTRAINT(E, (traits::is_same_size_v<value, E>))
-        constexpr value& assign(const E& e) noexcept
+        /// @brief Copies component values from another vector expression
+        /// @details Vector values are copied normally. Vector operations are evaluated and copied.
+        template<class Expr, class = std::enable_if_t<traits::is_same_size_v<value, Expr>>>
+        constexpr value& assign(const Expr& expr) noexcept
         {
-            for (size_t i = 0; i < N; i++)
-                data[i] = e[i];
-
+            for (size_t i = 0; i < Size; i++)
+                data[i] = expr[i];
             return *this;
-        }
-
-        std::string to_string(std::optional<std::string> name = {}) const noexcept
-        {
-            std::string out;
-
-            if (name)
-                out = *name + "  ";
-
-            for (size_t i = 0; i < N; i++)
-            {
-                if constexpr(traits::has_named_components_v<value>)
-                    out += names_t::_names_str[i];
-                else
-                    out += std::to_string(i);
-
-                out += ": " + std::to_string(data[i]) + "  ";
-            }
-            return out;
         }
     };
 }
 
-/*
- *  vector aliases
-*/
-
-template<class SCALAR_T, size_t SIZE>
-using vector = expr::value<SCALAR_T, SIZE>;
+/// @param Scalar The scalar type of the vector (e.g. ``int`` or ``float``)
+/// @param Size The size of the vector
+template<class Scalar, size_t Size>
+using vector = detail::value<Scalar, Size>;
 
 namespace types
 {
-    _DD_DEFINE_VECTOR_SIZE_ALIASES(2);
-    _DD_DEFINE_VECTOR_SIZE_ALIASES(3);
-    _DD_DEFINE_VECTOR_SIZE_ALIASES(4);
+    // 2D
+    using binary2d = vector<bool,     2>;
+    using char2d   = vector<int8_t,   2>;
+    using uchar2d  = vector<uint8_t,  2>;
+    using int2d    = vector<int32_t,  2>;
+    using uint2d   = vector<uint32_t, 2>;
+    using long2d   = vector<int64_t,  2>;
+    using float2d  = vector<float,    2>;
+    using double2d = vector<double,   2>;
+
+    // 3D
+    using binary3d = vector<bool,     3>;
+    using char3d   = vector<int8_t,   3>;
+    using uchar3d  = vector<uint8_t,  3>;
+    using int3d    = vector<int32_t,  3>;
+    using uint3d   = vector<uint32_t, 3>;
+    using long3d   = vector<int64_t,  3>;
+    using float3d  = vector<float,    3>;
+    using double3d = vector<double,   3>;
+
+    // 4D
+    using binary4d = vector<bool,     4>;
+    using char4d   = vector<int8_t,   4>;
+    using uchar4d  = vector<uint8_t,  4>;
+    using int4d    = vector<int32_t,  4>;
+    using uint4d   = vector<uint32_t, 4>;
+    using long4d   = vector<int64_t,  4>;
+    using float4d  = vector<float,    4>;
+    using double4d = vector<double,   4>;
 }
 
-/*
- *  static member resolves
-*/
+template<class Scalar, size_t Size>
+const vector<Scalar, Size> vector<Scalar, Size>::zero(0);
 
-template<class S, size_t N>
-const vector<S, N> vector<S, N>::zero(0);
-
-template<class S, size_t N>
-const vector<S, N> vector<S, N>::identity(1);
+template<class Scalar, size_t Size>
+const vector<Scalar, Size> vector<Scalar, Size>::identity(1);
 
 
 _DD_NAMESPACE_CLOSE
@@ -691,52 +723,57 @@ _DD_NAMESPACE_CLOSE
 
 namespace std
 {
-    /*
-     *  serialization
-    */
-    
-    _DD_TEMPLATE_CONSTRAINT(E, dd::traits::is_expr_v<E>)
-    std::ostream& operator<<(std::ostream& stream, const E& e)
+    /// @brief Serializes vector expression to a std::ostream
+    /// @details Allows for e.g. ``std::cout << vector``
+    template<class Expr, class = std::enable_if_t<dd::traits::is_expression_v<Expr>>>
+    std::ostream& operator<<(std::ostream& stream, const Expr& e)
     {
         return stream << e.to_string();
     }
 
-    /*
-     *  utility
-    */
-
-    template<class S, size_t N>
-    struct hash<dd::vector<S, N>>
+    /// @brief Hash specialization for use in ``std::unordered_*`` containers
+    template<class Scalar, size_t Size>
+    struct hash<dd::vector<Scalar, Size>>
     {
-        size_t operator()(const dd::vector<S, N>& v) const
+        size_t operator()(const dd::vector<Scalar, Size>& v) const
         {
-            std::string_view byte_data = { (char*)v.data, N * sizeof(S) };
+            // interpret data as a string_view and use the string_view hasher
+
+            std::string_view byte_data = { (char*)v.data, Size * sizeof(Scalar) };
             std::hash<std::string_view> string_hash;
             return string_hash(byte_data);
         }
     };
 
-    template<class S, size_t N>
-    S* begin(dd::vector<S, N>& v)
+    /// @defgroup Iterators
+    /// @brief These allow the use of const and non-const vector values
+    ///        in ranged-for loops
+
+    /// @ingroup Iterators
+    template<class Scalar, size_t Size>
+    Scalar* begin(dd::vector<Scalar, Size>& v)
     {
         return v.data;
     }
 
-    template<class S, size_t N>
-    S* end(dd::vector<S, N>& v)
+    /// @ingroup Iterators
+    template<class Scalar, size_t Size>
+    Scalar* end(dd::vector<Scalar, Size>& v)
     {
-        return v.data + N;
+        return v.data + Size;
     }
 
-    template<class S, size_t N>
-    const S* begin(const dd::vector<S, N>& v)
+    /// @ingroup Iterators
+    template<class Scalar, size_t Size>
+    const Scalar* begin(const dd::vector<Scalar, Size>& v)
     {
         return v.data;
     }
 
-    template<class S, size_t N>
-    const S* end(const dd::vector<S, N>& v)
+    /// @ingroup Iterators
+    template<class Scalar, size_t Size>
+    const Scalar* end(const dd::vector<Scalar, Size>& v)
     {
-        return v.data + N;
+        return v.data + Size;
     }
 }

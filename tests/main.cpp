@@ -1,41 +1,10 @@
+#include <dandy/dandy.h>
 #include <gtest/gtest.h>
-#include "include/dandy/dandy.h"
-
+#include <array>
 using namespace dd::types;
-
-/*
- *  boiler-plate to convert vectors. used by test conversions
-*/
-
-struct some_vector
-{
-    int x, y;
-};
-
-template<>
-struct dd::converter<int2d, some_vector>
-{
-    // some_vector -> dandy
-    static int2d from(const some_vector& v)
-    {
-        return int2d{ v.x, v.y };
-    }
-
-    // dandy -> some_vector
-    static some_vector from(const int2d& v)
-    {
-        return some_vector{ v.x, v.y };
-    }
-};
-
-/*
- *  tests
-*/
 
 TEST(requirements, requirements)
 {
-    // size and type of vector shouldn't matter so only int2d is tested
-    
     EXPECT_TRUE(std::is_default_constructible_v<int2d>);
     EXPECT_TRUE(std::is_move_constructible_v<int2d>);
     EXPECT_TRUE(std::is_copy_constructible_v<int2d>);
@@ -145,7 +114,8 @@ TEST(math, arithmetic)
     EXPECT_EQ(b.ceil(), int2d(-2, 5));
 
     // scalar casting
-    double2d c = b.scalar_cast<int>();
+    auto c = *b.scalar_cast<int>();
+    static_assert(std::is_same_v<decltype(c)::scalar_t, int>);
     EXPECT_EQ(c, int2d(b.x, b.y));
 }
 
@@ -189,18 +159,65 @@ TEST(math, linear)
 
 TEST(serialization, to_string)
 {
-    int2d a(1, 2);
-    EXPECT_EQ(a.to_string(), "x: 1  y: 2  ");
+    int4d a(1, 2, 3, 4);
+    EXPECT_EQ(a.to_string(), "(1, 2, 3, 4)");
+    EXPECT_EQ(a.to_string("Vector"), "Vector(1, 2, 3, 4)");
 }
+
+template<>
+struct dd::converter<int3d, std::array<int, 3>>
+{
+    static void convert(const int3d& from, std::array<int, 3>& to)
+    {
+        to[0] = from.x;
+        to[1] = from.y;
+        to[2] = from.z;
+    }
+
+    static void convert(const std::array<int, 3>& from, int3d& to)
+    {
+        to.x = from[0];
+        to.y = from[1];
+        to.z = from[2];
+    }
+};
+
+template<class T>
+struct some_vector
+{
+    T x, y;
+};
+
+template<class T>
+struct dd::converter<dd::vector<T, 2>, some_vector<T>>
+{
+    using dandy = dd::vector<T, 2>;
+    using foreign = some_vector<T>;
+
+    static void convert(const dandy& from, foreign& to)
+    {
+        to.x = from.x;
+        to.y = from.y;
+    }
+
+    static void convert(const foreign& from, dandy& to)
+    {
+        to.x = from.x;
+        to.y = from.y;
+    }
+};
 
 TEST(conversions, conversions)
 {
-    some_vector v = int2d(1, 2);
+    some_vector<int> arr = { 1, 2 };
+    int2d vec = arr;
 
-    EXPECT_EQ(v.x, 1);
-    EXPECT_EQ(v.y, 2);
+    EXPECT_EQ(vec.x, 1);
+    EXPECT_EQ(vec.y, 2);
 
-    int2d w = v;
-    EXPECT_EQ(w.x, 1);
-    EXPECT_EQ(w.y, 2);
+    vec = { 2, 4 };
+    arr = vec;
+
+    EXPECT_EQ(arr.x, 2);
+    EXPECT_EQ(arr.y, 4);
 }

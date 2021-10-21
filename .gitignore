@@ -1,8 +1,8 @@
 .git/
 .vs/
-Debug/
-Release/
-Packages/
+build/
+_build/
+_static/
 *.sln
 *.vcxproj
 *.filters
