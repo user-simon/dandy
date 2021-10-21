@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Custom Type Conversions &mdash; dandy  documentation</title>
+      <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
+        <script src="../_static/jquery.js"></script>
+        <script src="../_static/underscore.js"></script>
+        <script src="../_static/doctools.js"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Disabling Component Names" href="disable_names.html" />
+    <link rel="prev" title="API" href="api.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+            <a href="../index.html" class="icon icon-home"> dandy
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="getting_started.html">Getting started</a></li>
+<li class="toctree-l1"><a class="reference internal" href="api.html">API</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Custom Type Conversions</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#adding-a-conversion">Adding a conversion</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#examples">Examples</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="disable_names.html">Disabling Component Names</a></li>
+<li class="toctree-l1"><a class="reference internal" href="type_traits.html">Type traits</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">dandy</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home"></a> &raquo;</li>
+      <li>Custom Type Conversions</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/pages/conversions.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="custom-type-conversions">
+<h1>Custom Type Conversions<a class="headerlink" href="#custom-type-conversions" title="Permalink to this headline"></a></h1>
+<dl class="cpp struct">
+<dt class="sig sig-object cpp" id="_CPPv4I00E9converter">
+<span id="_CPPv3I00E9converter"></span><span id="_CPPv2I00E9converter"></span><span class="k"><span class="pre">template</span></span><span class="p"><span class="pre">&lt;</span></span><span class="k"><span class="pre">class</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">Dandy</span></span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="k"><span class="pre">class</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">Foreign</span></span></span><span class="p"><span class="pre">&gt;</span></span><br /><span class="target" id="structconverter"></span><span class="k"><span class="pre">struct</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">converter</span></span></span><a class="headerlink" href="#_CPPv4I00E9converter" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Interface to convert between a dandy vector type and an arbitrary foreign type. </p>
+<p><div class="admonition note">
+<p class="admonition-title">Note</p>
+<p><ul class="simple">
+<li><p>The Foreign type has to be default constructable</p></li>
+<li><p>There is currently no mechanism to allow only one way of the conversion </p></li>
+</ul>
+</p>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">param Dandy</dt>
+<dd class="field-odd"><p>A dandy vector type </p>
+</dd>
+<dt class="field-even">param Foreign</dt>
+<dd class="field-even"><p>A foreign type</p>
+</dd>
+</dl>
+</p>
+</dd></dl>
+
+<section id="adding-a-conversion">
+<h2>Adding a conversion<a class="headerlink" href="#adding-a-conversion" title="Permalink to this headline"></a></h2>
+<p>Start by specializing the <a class="reference internal" href="#_CPPv4I00E9converter" title="converter"><code class="xref cpp cpp-class docutils literal notranslate"><span class="pre">converter</span></code></a> struct for the desired dandy type and desired
+foreign type <em>in that order</em>. Then add two static methods named <code class="docutils literal notranslate"><span class="pre">convert</span></code>, each taking as
+parameters one of the types to convert <em>from</em> and a reference to the other type to convert <em>to</em>.</p>
+</section>
+<section id="examples">
+<h2>Examples<a class="headerlink" href="#examples" title="Permalink to this headline"></a></h2>
+<p>Specialization to convert between <code class="docutils literal notranslate"><span class="pre">int3d</span></code> and <code class="docutils literal notranslate"><span class="pre">std::array&lt;int,</span> <span class="pre">3&gt;</span></code>:</p>
+<div class="highlight-C notranslate"><div class="highlight"><pre><span></span><span class="n">template</span><span class="o">&lt;&gt;</span>
+<span class="k">struct</span> <span class="n">dd</span><span class="o">::</span><span class="n">converter</span><span class="o">&lt;</span><span class="n">int3d</span><span class="p">,</span> <span class="n">std</span><span class="o">::</span><span class="n">array</span><span class="o">&lt;</span><span class="kt">int</span><span class="p">,</span> <span class="mi">3</span><span class="o">&gt;&gt;</span>
+<span class="p">{</span>
+    <span class="k">static</span> <span class="kt">void</span> <span class="n">convert</span><span class="p">(</span><span class="k">const</span> <span class="n">int3d</span><span class="o">&amp;</span> <span class="n">from</span><span class="p">,</span> <span class="n">std</span><span class="o">::</span><span class="n">array</span><span class="o">&lt;</span><span class="kt">int</span><span class="p">,</span> <span class="mi">3</span><span class="o">&gt;&amp;</span> <span class="n">to</span><span class="p">)</span>
+    <span class="p">{</span>
+        <span class="n">to</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="n">from</span><span class="p">.</span><span class="n">x</span><span class="p">;</span>
+        <span class="n">to</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">from</span><span class="p">.</span><span class="n">y</span><span class="p">;</span>
+        <span class="n">to</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="o">=</span> <span class="n">from</span><span class="p">.</span><span class="n">z</span><span class="p">;</span>
+    <span class="p">}</span>
+
+    <span class="k">static</span> <span class="kt">void</span> <span class="n">convert</span><span class="p">(</span><span class="k">const</span> <span class="n">std</span><span class="o">::</span><span class="n">array</span><span class="o">&lt;</span><span class="kt">int</span><span class="p">,</span> <span class="mi">3</span><span class="o">&gt;&amp;</span> <span class="n">from</span><span class="p">,</span> <span class="n">int3d</span><span class="o">&amp;</span> <span class="n">to</span><span class="p">)</span>
+    <span class="p">{</span>
+        <span class="n">to</span><span class="p">.</span><span class="n">x</span> <span class="o">=</span> <span class="n">from</span><span class="p">[</span><span class="mi">0</span><span class="p">];</span>
+        <span class="n">to</span><span class="p">.</span><span class="n">y</span> <span class="o">=</span> <span class="n">from</span><span class="p">[</span><span class="mi">1</span><span class="p">];</span>
+        <span class="n">to</span><span class="p">.</span><span class="n">z</span> <span class="o">=</span> <span class="n">from</span><span class="p">[</span><span class="mi">2</span><span class="p">];</span>
+    <span class="p">}</span>
+<span class="p">};</span>
+</pre></div>
+</div>
+<p>Specialization to convert between <code class="docutils literal notranslate"><span class="pre">dd::vector&lt;T,</span> <span class="pre">2&gt;</span></code> and a user defined vector type <code class="docutils literal notranslate"><span class="pre">some_vector&lt;T&gt;</span></code>:</p>
+<div class="highlight-C notranslate"><div class="highlight"><pre><span></span><span class="n">template</span><span class="o">&lt;</span><span class="n">class</span> <span class="n">T</span><span class="o">&gt;</span>
+<span class="k">struct</span> <span class="n">some_vector</span>
+<span class="p">{</span>
+    <span class="n">T</span> <span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">;</span>
+<span class="p">};</span>
+
+<span class="n">template</span><span class="o">&lt;</span><span class="n">class</span> <span class="n">T</span><span class="o">&gt;</span>
+<span class="k">struct</span> <span class="n">dd</span><span class="o">::</span><span class="n">converter</span><span class="o">&lt;</span><span class="n">dd</span><span class="o">::</span><span class="n">vector</span><span class="o">&lt;</span><span class="n">T</span><span class="p">,</span> <span class="mi">2</span><span class="o">&gt;</span><span class="p">,</span> <span class="n">some_vector</span><span class="o">&lt;</span><span class="n">T</span><span class="o">&gt;&gt;</span>
+<span class="p">{</span>
+    <span class="n">using</span> <span class="n">dandy</span> <span class="o">=</span> <span class="n">dd</span><span class="o">::</span><span class="n">vector</span><span class="o">&lt;</span><span class="n">T</span><span class="p">,</span> <span class="mi">2</span><span class="o">&gt;</span><span class="p">;</span>
+    <span class="n">using</span> <span class="n">foreign</span> <span class="o">=</span> <span class="n">some_vector</span><span class="o">&lt;</span><span class="n">T</span><span class="o">&gt;</span><span class="p">;</span>
+
+    <span class="k">static</span> <span class="kt">void</span> <span class="nf">convert</span><span class="p">(</span><span class="k">const</span> <span class="n">dandy</span><span class="o">&amp;</span> <span class="n">from</span><span class="p">,</span> <span class="n">foreign</span><span class="o">&amp;</span> <span class="n">to</span><span class="p">)</span>
+    <span class="p">{</span>
+        <span class="n">to</span><span class="p">.</span><span class="n">x</span> <span class="o">=</span> <span class="n">from</span><span class="p">.</span><span class="n">x</span><span class="p">;</span>
+        <span class="n">to</span><span class="p">.</span><span class="n">y</span> <span class="o">=</span> <span class="n">from</span><span class="p">.</span><span class="n">y</span><span class="p">;</span>
+    <span class="p">}</span>
+
+    <span class="k">static</span> <span class="kt">void</span> <span class="nf">convert</span><span class="p">(</span><span class="k">const</span> <span class="n">foreign</span><span class="o">&amp;</span> <span class="n">from</span><span class="p">,</span> <span class="n">dandy</span><span class="o">&amp;</span> <span class="n">to</span><span class="p">)</span>
+    <span class="p">{</span>
+        <span class="n">to</span><span class="p">.</span><span class="n">x</span> <span class="o">=</span> <span class="n">from</span><span class="p">.</span><span class="n">x</span><span class="p">;</span>
+        <span class="n">to</span><span class="p">.</span><span class="n">y</span> <span class="o">=</span> <span class="n">from</span><span class="p">.</span><span class="n">y</span><span class="p">;</span>
+    <span class="p">}</span>
+<span class="p">};</span>
+</pre></div>
+</div>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="api.html" class="btn btn-neutral float-left" title="API" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="disable_names.html" class="btn btn-neutral float-right" title="Disabling Component Names" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2021, exit.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>
