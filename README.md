@@ -8,14 +8,14 @@
 * **expression templates**: all vector expressions are parsed at compile-time
 * **STL integration**: overloads for various standard functions
 
-# Requirements
+## Requirements
 
 dandy requires C++17 or newer and has been formally tested on MSVC and CLANG.
 
-# Wiki
+## Wiki
 
 Read the documentation [here]()
 
-# Building
+## Building
 
 Use the provided [CMakeLists.txt](CMakeLists.txt) file to generate a project. Alternatively, if you're on Windows, you can use the provided [make_vs.bat](make_vs.bat) script to create the project. 
