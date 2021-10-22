@@ -319,7 +319,7 @@ namespace detail
         }
 
         /// @brief Calculates the Euclidian length
-        /// @details Analagous to writing ``std::sqrt(vector.length2())``
+        /// @details Analagous to writing `std::sqrt(vector.length2())`
         double length() const
         {
             return std::sqrt((double)length2());
@@ -333,7 +333,7 @@ namespace detail
         }
 
         /// @brief Calculates the Euclidian distance to another vector expression
-        /// @details Analagous to writing ``std::sqrt(vector.distance2())``
+        /// @details Analagous to writing `std::sqrt(vector.distance2())`
         template<class Expr, class = std::enable_if_t<traits::is_same_size_v<Expr, Child>>>
         constexpr double distance(const Expr& expr) const
         {
@@ -341,14 +341,14 @@ namespace detail
         }
 
         /// @brief Calculates the normalized vector
-        /// @details Analagous to writing ``vector / vector.length()`` 
+        /// @details Analagous to writing `vector / vector.length()``
         value<double, size> normalize() const
         {
             return _child() / length();
         }
 
         /// @brief Sets the Euclidian length
-        /// @details Analogous to writing ``vector.normalize() * length``
+        /// @details Analogous to writing `vector.normalize() * length`
         value<double, size> set_length(double length) const noexcept
         {
             return normalize() * length;
@@ -541,10 +541,10 @@ namespace detail
     template<class Scalar>
     struct component_names<Scalar, 2, true>
     {
-        /// @brief The ``X`` component
+        /// @brief The `X` component
         Scalar& x;
 
-        /// @brief The ``Y`` component
+        /// @brief The `Y` component
         Scalar& y;
 
         constexpr component_names(Scalar data[2]) noexcept : x(data[0]), y(data[1]) {}
@@ -555,7 +555,7 @@ namespace detail
     template<class Scalar>
     struct component_names<Scalar, 3, true> : component_names<Scalar, 2>
     {
-        /// @brief The ``Z`` component
+        /// @brief The `Z` component
         Scalar& z;
 
         constexpr component_names(Scalar data[3]) noexcept : component_names<Scalar, 2>(data), z(data[2]) {}
@@ -566,7 +566,7 @@ namespace detail
     template<class Scalar>
     struct component_names<Scalar, 4, true> : component_names<Scalar, 3>
     {
-        /// @brief The ``W`` component
+        /// @brief The `W` component
         Scalar& w;
 
         constexpr component_names(Scalar data[4]) noexcept : component_names<Scalar, 3>(data), w(data[3]) {}
@@ -673,7 +673,7 @@ namespace detail
     };
 }
 
-/// @param Scalar The scalar type of the vector (e.g. ``int`` or ``float``)
+/// @param Scalar The scalar type of the vector (e.g. `int` or `float`)
 /// @param Size The size of the vector
 template<class Scalar, size_t Size>
 using vector = detail::value<Scalar, Size>;
@@ -681,32 +681,35 @@ using vector = detail::value<Scalar, Size>;
 namespace types
 {
     // 2D
-    using binary2d = vector<bool,     2>;
-    using char2d   = vector<int8_t,   2>;
-    using uchar2d  = vector<uint8_t,  2>;
+    using bit2d    = vector<bool,     2>;
+    using byte2d   = vector<uint8_t,  2>;
+    using char2d   = vector<char,     2>;
     using int2d    = vector<int32_t,  2>;
     using uint2d   = vector<uint32_t, 2>;
     using long2d   = vector<int64_t,  2>;
+    using ulong2d  = vector<uint64_t, 2>;
     using float2d  = vector<float,    2>;
     using double2d = vector<double,   2>;
 
     // 3D
-    using binary3d = vector<bool,     3>;
-    using char3d   = vector<int8_t,   3>;
-    using uchar3d  = vector<uint8_t,  3>;
+    using bit3d    = vector<bool,     3>;
+    using byte3d   = vector<uint8_t,  3>;
+    using char3d   = vector<char,     3>;
     using int3d    = vector<int32_t,  3>;
     using uint3d   = vector<uint32_t, 3>;
     using long3d   = vector<int64_t,  3>;
+    using ulong3d  = vector<uint64_t, 3>;
     using float3d  = vector<float,    3>;
     using double3d = vector<double,   3>;
 
     // 4D
-    using binary4d = vector<bool,     4>;
-    using char4d   = vector<int8_t,   4>;
-    using uchar4d  = vector<uint8_t,  4>;
+    using bit4d    = vector<bool,     4>;
+    using byte4d   = vector<uint8_t,  4>;
+    using char4d   = vector<char,     4>;
     using int4d    = vector<int32_t,  4>;
     using uint4d   = vector<uint32_t, 4>;
     using long4d   = vector<int64_t,  4>;
+    using ulong4d  = vector<uint64_t, 4>;
     using float4d  = vector<float,    4>;
     using double4d = vector<double,   4>;
 }
@@ -723,15 +726,15 @@ _DD_NAMESPACE_CLOSE
 
 namespace std
 {
-    /// @brief Serializes vector expression to a std::ostream
-    /// @details Allows for e.g. ``std::cout << vector``
+    /// @brief Serializes vector expression to a `std::ostream`
+    /// @details Allows for e.g. `std::cout << vector`
     template<class Expr, class = std::enable_if_t<dd::traits::is_expression_v<Expr>>>
     std::ostream& operator<<(std::ostream& stream, const Expr& e)
     {
         return stream << e.to_string();
     }
 
-    /// @brief Hash specialization for use in ``std::unordered_*`` containers
+    /// @brief Hash specialization for use in `std::unordered_*` containers
     template<class Scalar, size_t Size>
     struct hash<dd::vector<Scalar, Size>>
     {
