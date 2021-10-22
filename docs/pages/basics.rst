@@ -11,8 +11,8 @@ Vector types
 
 For convenience, the following aliases are also available under the sub-namespace ``types``:
 
-.. doxygengroup:: 2D
-	:members:
+.. doxygennamespace:: types
+    :outline:
 
 Construction
 ------------
