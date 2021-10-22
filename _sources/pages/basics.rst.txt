@@ -1,5 +1,5 @@
-Getting started
-===============
+Basics
+======
 
 To use dandy in a project, simply include the header file and optionally add ``using namespace dd::types``
 to your source for more immediate access to the vector types.

@@ -1,7 +1,7 @@
 API
 ===
 
-Vector Expressions
+Vector expressions
 ------------------
 
 .. doxygenstruct:: detail::expression_base
@@ -19,7 +19,7 @@ Vector Expressions
 .. doxygengroup:: ComponentNames
     :members:
 
-STL Integration
+STL integration
 ---------------
 
 .. doxygenfunction:: std::operator<<

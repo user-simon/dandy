@@ -8,7 +8,7 @@ Contents
 
 .. toctree::
 
-   pages/getting_started
+   pages/basics
    pages/api
    pages/conversions
    pages/disable_names

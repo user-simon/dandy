@@ -19,7 +19,7 @@
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
     <link rel="next" title="Custom Type Conversions" href="conversions.html" />
-    <link rel="prev" title="Getting started" href="getting_started.html" /> 
+    <link rel="prev" title="Basics" href="basics.html" /> 
 </head>
 
 <body class="wy-body-for-nav"> 
@@ -38,10 +38,10 @@
 </div>
         </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
               <ul class="current">
-<li class="toctree-l1"><a class="reference internal" href="getting_started.html">Getting started</a></li>
+<li class="toctree-l1"><a class="reference internal" href="basics.html">Basics</a></li>
 <li class="toctree-l1 current"><a class="current reference internal" href="#">API</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="#vector-expressions">Vector Expressions</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#stl-integration">STL Integration</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#vector-expressions">Vector expressions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#stl-integration">STL integration</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="conversions.html">Custom Type Conversions</a></li>
@@ -76,7 +76,7 @@
   <section id="api">
 <h1>API<a class="headerlink" href="#api" title="Permalink to this headline"></a></h1>
 <section id="vector-expressions">
-<h2>Vector Expressions<a class="headerlink" href="#vector-expressions" title="Permalink to this headline"></a></h2>
+<h2>Vector expressions<a class="headerlink" href="#vector-expressions" title="Permalink to this headline"></a></h2>
 <dl class="cpp struct">
 <dt class="sig sig-object cpp" id="_CPPv4I0EN6detail15expression_baseE">
 <span id="_CPPv3I0EN6detail15expression_baseE"></span><span id="_CPPv2I0EN6detail15expression_baseE"></span><span class="k"><span class="pre">template</span></span><span class="p"><span class="pre">&lt;</span></span><span class="k"><span class="pre">class</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">Child</span></span></span><span class="p"><span class="pre">&gt;</span></span><br /><span class="target" id="structdetail_1_1expression__base"></span><span class="k"><span class="pre">struct</span></span><span class="w"> </span><span class="sig-prename descclassname"><span class="n"><span class="pre">detail</span></span><span class="p"><span class="pre">::</span></span></span><span class="sig-name descname"><span class="n"><span class="pre">expression_base</span></span></span><a class="headerlink" href="#_CPPv4I0EN6detail15expression_baseE" title="Permalink to this definition"></a><br /></dt>
@@ -468,7 +468,7 @@
 
 </section>
 <section id="stl-integration">
-<h2>STL Integration<a class="headerlink" href="#stl-integration" title="Permalink to this headline"></a></h2>
+<h2>STL integration<a class="headerlink" href="#stl-integration" title="Permalink to this headline"></a></h2>
 <dl class="cpp function">
 <dt class="sig sig-object cpp" id="_CPPv4I00ENStlsERNSt7ostreamERNSt7ostreamERK4Expr">
 <span id="_CPPv3I00ENStlsERNSt7ostreamERK4Expr"></span><span id="_CPPv2I00ENStlsERNSt7ostreamERK4Expr"></span><span class="k"><span class="pre">template</span></span><span class="p"><span class="pre">&lt;</span></span><span class="k"><span class="pre">class</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">Expr</span></span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="k"><span class="pre">class</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="n"><span class="pre">std</span></span><span class="p"><span class="pre">::</span></span><span class="n"><span class="pre">enable_if_t</span></span><span class="p"><span class="pre">&lt;</span></span><span class="n"><span class="pre">dd</span></span><span class="p"><span class="pre">::</span></span><span class="n"><span class="pre">traits</span></span><span class="p"><span class="pre">::</span></span><span class="n"><span class="pre">is_expression_v</span></span><span class="p"><span class="pre">&lt;</span></span><a class="reference internal" href="#_CPPv4I00ENStlsERNSt7ostreamERNSt7ostreamERK4Expr" title="std::operator&lt;&lt;::Expr"><span class="n"><span class="pre">Expr</span></span></a><span class="p"><span class="pre">&gt;</span></span><span class="p"><span class="pre">&gt;</span></span><span class="p"><span class="pre">&gt;</span></span><br /><span class="target" id="dandy_8h_1a09c565b351549161e26cf74ef9a7e01c"></span><span class="n"><span class="pre">std</span></span><span class="p"><span class="pre">::</span></span><span class="n"><span class="pre">ostream</span></span><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="sig-prename descclassname"><span class="n"><span class="pre">std</span></span><span class="p"><span class="pre">::</span></span></span><span class="sig-name descname"><span class="k"><span class="pre">operator</span></span><span class="o"><span class="pre">&lt;&lt;</span></span></span><span class="sig-paren">(</span><span class="n"><span class="pre">std</span></span><span class="p"><span class="pre">::</span></span><span class="n"><span class="pre">ostream</span></span><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">stream</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv4I00ENStlsERNSt7ostreamERNSt7ostreamERK4Expr" title="std::operator&lt;&lt;::Expr"><span class="n"><span class="pre">Expr</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">e</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4I00ENStlsERNSt7ostreamERNSt7ostreamERK4Expr" title="Permalink to this definition"></a><br /></dt>
@@ -518,7 +518,7 @@
            </div>
           </div>
           <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
-        <a href="getting_started.html" class="btn btn-neutral float-left" title="Getting started" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="basics.html" class="btn btn-neutral float-left" title="Basics" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
         <a href="conversions.html" class="btn btn-neutral float-right" title="Custom Type Conversions" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
     </div>
 
