@@ -484,8 +484,13 @@ namespace detail
     private:
         using base = expression<operation>;
     public:
+        /// @brief The scalar type result of the operation
         using typename base::scalar_t;
+
+        /// @brief The vector type result of the operation
         using typename base::vector_t;
+
+        /// @brief The size of the vectors in the operation
         using base::size;
         
         /// @brief Constructs a vector operation from a function and operands
@@ -584,7 +589,6 @@ namespace detail
         using base = expression<value>;
         using component_names = component_names<Scalar, Size>;
     public:
-
         /// @brief The scalar type of the value
         using typename base::scalar_t;
 
@@ -599,7 +603,7 @@ namespace detail
 
         /// @brief Vector value filled with ones
         const static value identity;
-
+              
         /// @brief Houses the data for the vector value
         scalar_t data[size];
         
