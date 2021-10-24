@@ -78,8 +78,10 @@
              
   <section id="basics">
 <h1>Basics<a class="headerlink" href="#basics" title="Permalink to this headline"></a></h1>
-<p>To use dandy in a project, simply include the header file and optionally add <code class="docutils literal notranslate"><span class="pre">using</span> <span class="pre">namespace</span> <span class="pre">dd::types</span></code>
-to your source for more immediate access to the vector types.</p>
+<p><strong>dandy</strong> is an easy to integrate, single-header linear algebra vector library making
+use of expression templates for compile-time expression parsing – as such,
+operations can be performed on complex vector expressions without the need for
+intermediary vector allocations.</p>
 <section id="vector-types">
 <h2>Vector types<a class="headerlink" href="#vector-types" title="Permalink to this headline"></a></h2>
 <dl class="cpp type">
@@ -95,7 +97,9 @@ to your source for more immediate access to the vector types.</p>
 </dl>
 </dd></dl>
 
-<p>For convenience, the following aliases are also available under the sub-namespace <code class="docutils literal notranslate"><span class="pre">types</span></code>:</p>
+<p>For convenience, the following aliases for the vector type have been defined and can be accessed
+either under the <code class="docutils literal notranslate"><span class="pre">dd</span></code> namespace or in the global namespace by adding <code class="docutils literal notranslate"><span class="pre">using</span> <span class="pre">namespace</span> <span class="pre">dd::types</span></code>
+to your source (note that this does not leak any additional symbols).</p>
 <dl class="cpp type">
 <dt class="sig sig-object cpp" id="_CPPv45types">
 <span id="_CPPv35types"></span><span id="_CPPv25types"></span><span id="types"></span><span class="target" id="namespacetypes"></span><span class="k"><span class="pre">namespace</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">types</span></span></span><a class="headerlink" href="#_CPPv45types" title="Permalink to this definition"></a><br /></dt>
