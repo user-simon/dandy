@@ -1,15 +1,19 @@
 Basics
 ======
 
-To use dandy in a project, simply include the header file and optionally add ``using namespace dd::types``
-to your source for more immediate access to the vector types.
+**dandy** is an easy to integrate, single-header linear algebra vector library making 
+use of expression templates for compile-time expression parsing -- as such, 
+operations can be performed on complex vector expressions without the need for
+intermediary vector allocations.
 
 Vector types
 ------------
 
 .. doxygentypedef:: vector
 
-For convenience, the following aliases are also available under the sub-namespace ``types``:
+For convenience, the following aliases for the vector type have been defined and can be accessed
+either under the ``dd`` namespace or in the global namespace by adding ``using namespace dd::types``
+to your source (note that this does not leak any additional symbols).
 
 .. doxygennamespace:: types
     :outline:
