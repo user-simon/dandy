@@ -226,8 +226,8 @@ namespace detail
     struct expression_base
     {
     protected:
-        using scalar_t = typename traits::scalar_t<Child>;
-        using vector_t = typename traits::vector_t<Child>;
+        using scalar_t = traits::scalar_t<Child>;
+        using vector_t = traits::vector_t<Child>;
         constexpr static size_t size = traits::size_v<Child>;
     public:
         template<class Expr, class = std::enable_if_t<traits::is_same_size_v<Expr, Child>>>
@@ -265,7 +265,7 @@ namespace detail
         }
 
         ///  @brief Gets the component at specified index
-        constexpr inline scalar_t get(size_t index) const
+        constexpr inline scalar_t at(size_t index) const
         {
             return _child()[index];
         }
@@ -276,7 +276,7 @@ namespace detail
             scalar_t out = 0;
 
             for (size_t i = 0; i < size; i++)
-                out += get(i);
+                out += at(i);
             return out;
         }
 
@@ -286,7 +286,7 @@ namespace detail
             scalar_t out = 1;
 
             for (size_t i = 0; i < size; i++)
-                out *= get(i);
+                out *= at(i);
             return out;
         }
 
@@ -295,7 +295,7 @@ namespace detail
         {
             for (size_t i = 0; i < size; i++)
             {
-                if (get(i))
+                if (at(i))
                     return true;
             }
             return false;
@@ -308,7 +308,7 @@ namespace detail
             scalar_t out = 0;
 
             for (size_t i = 0; i < size; i++)
-                out += get(i) * expr[i];
+                out += at(i) * expr[i];
             return out;
         }
 
@@ -407,7 +407,7 @@ namespace detail
 
             for (size_t i = 0; i < size; i++)
             {
-                out += std::to_string(get(i));
+                out += std::to_string(at(i));
 
                 if (i < (size - 1)) [[likely]]
                     out += ", ";
@@ -439,7 +439,7 @@ namespace detail
         /// @brief Calculates the angle represented by the vector expression
         double angle() const noexcept
         {
-            return std::atan2(base::get(1), base::get(0));
+            return std::atan2(base::at(1), base::at(0));
         }
 
         /// @brief Constructs the vector value representation of an angle
@@ -468,9 +468,9 @@ namespace detail
         {
             return
             {
-                base::get(1) * expr[2] - base::get(2) * expr[1],
-                base::get(2) * expr[0] - base::get(0) * expr[2],
-                base::get(0) * expr[1] - base::get(1) * expr[0]
+                base::at(1) * expr[2] - base::at(2) * expr[1],
+                base::at(2) * expr[0] - base::at(0) * expr[2],
+                base::at(0) * expr[1] - base::at(1) * expr[0]
             };
         }
     };
@@ -592,9 +592,6 @@ namespace detail
         /// @brief The scalar type of the value
         using typename base::scalar_t;
 
-        /// @brief The vector type of the value
-        using typename base::vector_t;
-
         /// @brief The vector size of the value
         using base::size;
 
@@ -621,12 +618,12 @@ namespace detail
         /// @details All components will be initialized to v
         constexpr explicit value(scalar_t scalar) noexcept : component_names(data)
         {
-            for (size_t i = 0; i < Size; i++)
+            for (size_t i = 0; i < size; i++)
                 data[i] = scalar;
         }
 
         /// @brief Copies component values from another vector value of the same type
-        /// @details This function is required explicitly to ensure component_names is
+        /// @details This function is defined explicitly to ensure component_names is
         ///          initialized properly
         constexpr value(const value& other) noexcept : component_names(data)
         {
@@ -670,9 +667,36 @@ namespace detail
         template<class Expr, class = std::enable_if_t<traits::is_same_size_v<value, Expr>>>
         constexpr value& assign(const Expr& expr) noexcept
         {
-            for (size_t i = 0; i < Size; i++)
+            for (size_t i = 0; i < size; i++)
                 data[i] = expr[i];
             return *this;
+        }
+
+        /// @defgroup Iterators
+        /// @brief These allow the use of vector values in STL algorithms and ranged-for loops
+
+        /// @ingroup Iterators
+        Scalar* begin()
+        {
+            return data;
+        }
+
+        /// @ingroup Iterators
+        Scalar* end()
+        {
+            return data + size;
+        }
+
+        /// @ingroup Iterators
+        const Scalar* begin() const
+        {
+            return data;
+        }
+
+        /// @ingroup Iterators
+        const Scalar* end() const
+        {
+            return data + size;
         }
     };
 }
@@ -717,6 +741,7 @@ namespace types
     using float4d  = vector<float,    4>;
     using double4d = vector<double,   4>;
 }
+using namespace types;
 
 template<class Scalar, size_t Size>
 const vector<Scalar, Size> vector<Scalar, Size>::zero(0);
@@ -751,36 +776,4 @@ namespace std
             return string_hash(byte_data);
         }
     };
-
-    /// @defgroup Iterators
-    /// @brief These allow the use of const and non-const vector values
-    ///        in ranged-for loops
-
-    /// @ingroup Iterators
-    template<class Scalar, size_t Size>
-    Scalar* begin(dd::vector<Scalar, Size>& v)
-    {
-        return v.data;
-    }
-
-    /// @ingroup Iterators
-    template<class Scalar, size_t Size>
-    Scalar* end(dd::vector<Scalar, Size>& v)
-    {
-        return v.data + Size;
-    }
-
-    /// @ingroup Iterators
-    template<class Scalar, size_t Size>
-    const Scalar* begin(const dd::vector<Scalar, Size>& v)
-    {
-        return v.data;
-    }
-
-    /// @ingroup Iterators
-    template<class Scalar, size_t Size>
-    const Scalar* end(const dd::vector<Scalar, Size>& v)
-    {
-        return v.data + Size;
-    }
 }
