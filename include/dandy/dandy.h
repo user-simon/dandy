@@ -709,9 +709,9 @@ using vector = detail::value<Scalar, Size>;
 namespace types
 {
     // 2D
-    using bit2d    = vector<bool,     2>;
-    using byte2d   = vector<uint8_t,  2>;
-    using char2d   = vector<char,     2>;
+    using bool2d   = vector<bool,     2>;
+    using char2d   = vector<int8_t,   2>;
+    using uchar2d  = vector<uint8_t,  2>;
     using int2d    = vector<int32_t,  2>;
     using uint2d   = vector<uint32_t, 2>;
     using long2d   = vector<int64_t,  2>;
@@ -720,9 +720,9 @@ namespace types
     using double2d = vector<double,   2>;
 
     // 3D
-    using bit3d    = vector<bool,     3>;
-    using byte3d   = vector<uint8_t,  3>;
-    using char3d   = vector<char,     3>;
+    using bool3d   = vector<bool,     3>;
+    using char3d   = vector<int8_t,   3>;
+    using uchar3d  = vector<uint8_t,  3>;
     using int3d    = vector<int32_t,  3>;
     using uint3d   = vector<uint32_t, 3>;
     using long3d   = vector<int64_t,  3>;
@@ -731,9 +731,9 @@ namespace types
     using double3d = vector<double,   3>;
 
     // 4D
-    using bit4d    = vector<bool,     4>;
-    using byte4d   = vector<uint8_t,  4>;
-    using char4d   = vector<char,     4>;
+    using bool4d   = vector<bool,     4>;
+    using char4d   = vector<int8_t,   4>;
+    using uchar4d  = vector<uint8_t,  4>;
     using int4d    = vector<int32_t,  4>;
     using uint4d   = vector<uint32_t, 4>;
     using long4d   = vector<int64_t,  4>;
@@ -741,6 +741,8 @@ namespace types
     using float4d  = vector<float,    4>;
     using double4d = vector<double,   4>;
 }
+
+// bring the vector types to the dd namespace
 using namespace types;
 
 template<class Scalar, size_t Size>

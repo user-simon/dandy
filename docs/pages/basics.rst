@@ -101,21 +101,21 @@ Operator overloads
     - All operators require the argument vector expressions (if more than one) to be of the same size
     - All operators evaluate the expressions component-wise
 
-- the binary operators ``+``, ``-``, ``*``, ``/``, ``%``, ``&``, ``|``, ``^``, ``>>``, ``<<``, and their respective assignment counterparts are all overloaded for expressions of the pattern:
+- The binary operators ``+``, ``-``, ``*``, ``/``, ``%``, ``&``, ``|``, ``^``, ``>>``, ``<<``, and their respective assignment counterparts are all overloaded for expressions of the pattern:
 
   .. code-block:: C
   
       [vector expression] [operator] [vector expression]
       [vector expression] [operator] [scalar]
 
-- all binary operators except the assignment operators are overloaded for expressions of the pattern:
+- All binary operators except the assignment operators are overloaded for expressions of the pattern:
 
   .. code-block:: C
   
       [scalar] [operator] [vector expression]
   
-- the unary operators ``+``, ``-``, and ``~`` are overloaded for all vector expressions
-- is `EqualityComparable <https://en.cppreference.com/w/cpp/named_req/EqualityComparable>`_:
+- The unary operators ``+``, ``-``, and ``~`` are overloaded for all vector expressions
+- Is `EqualityComparable <https://en.cppreference.com/w/cpp/named_req/EqualityComparable>`_:
 
   .. code-block:: C
   
@@ -126,7 +126,7 @@ Operator overloads
       assert(a == b);
       assert(a != (b + c));
   
-- is **explicitly** convertable to a bool:
+- Is **explicitly** convertable to a bool:
 
   .. code-block:: C
   
@@ -141,13 +141,13 @@ Operator overloads
 Indexing
 --------
 
-- Components in all vector expressions can be retrieved either with :cpp:func:`detail::expression_base::get`:
+- Components in all vector expressions can be retrieved either with :cpp:func:`detail::expression_base::at`:
 
   .. code-block:: C
 
       float3d v { 1, 2, 3 };
-      float x = v.get(0); // x is 1
-      float y = v.get(1); // y is 2
+      float x = v.at(0); // x is 1
+      float y = v.at(1); // y is 2
 
   Or with the index operators:
 
@@ -157,7 +157,8 @@ Indexing
       float x = v[0]; // x is 1
       float y = v[1]; // y is 2
 
-- By default, components in a vector value can also be accessed by name:
+
+- :doc:`By default <disable_names>`, components in a vector value can also be accessed by name:
   
   .. code-block:: C
 
