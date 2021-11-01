@@ -235,7 +235,7 @@ namespace detail
         {
             for (size_t i = 0; i < size; i++)
             {
-                if (get(i) != expr[i])
+                if (at(i) != expr[i])
                     return false;
             }
             return true;
@@ -706,6 +706,9 @@ namespace detail
 template<class Scalar, size_t Size>
 using vector = detail::value<Scalar, Size>;
 
+/// @brief For convenience, the following aliases for the vector type have been defined and can be accessed
+///        either under the `dd` namespace or in the global namespace by adding `using namespace dd::types`
+///        to your source (note that this does not leak any additional symbols).
 namespace types
 {
     // 2D
