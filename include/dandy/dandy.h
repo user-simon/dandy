@@ -13,7 +13,7 @@
 #define _DD_OPERATION_T auto
 #define _DD_DEFINE_BINARY_OPERATOR(op)                                                              \
     template<class L, class R, class = std::enable_if_t<traits::is_valid_operation_v<L, R, false>>> \
-    constexpr inline _DD_OPERATION_T operator op (const L& l, const R& r)                           \
+    constexpr _DD_OPERATION_T operator op (const L& l, const R& r)                                  \
     {                                                                                               \
         return detail::operation                                                                    \
         {                                                                                           \
@@ -23,14 +23,14 @@
                                                                                                     \
     }                                                                                               \
     template<class L, class R, class = std::enable_if_t<traits::is_valid_operation_v<L, R, true>>>  \
-    constexpr inline _DD_OPERATION_T operator op##=(L& l, const R& r)                               \
+    constexpr _DD_OPERATION_T operator op##=(L& l, const R& r)                                      \
     {                                                                                               \
         return l = l op r;                                                                          \
     }                                                                                               \
 
 #define _DD_DEFINE_UNARY_OPERATOR(op)                                             \
     template<class Expr, class = std::enable_if_t<traits::is_expression_v<Expr>>> \
-    constexpr inline _DD_OPERATION_T operator op (const Expr& expr)               \
+    constexpr _DD_OPERATION_T operator op (const Expr& expr)                      \
     {                                                                             \
         return detail::operation                                                  \
         {                                                                         \
@@ -43,9 +43,14 @@
 _DD_NAMESPACE_OPEN
 
 
-/// @brief Define as 0 to disable named vector components
-#ifndef DD_ENABLE_NAMES
-#define DD_ENABLE_NAMES 1
+/// @brief Define as 1 to disable named vector components
+#ifndef DD_DISABLE_NAMES
+#define DD_DISABLE_NAMES 0
+#endif
+
+/// @brief Define as 1 to disable prefabricated vector values
+#ifndef DD_DISABLE_PREFABS
+#define DD_DISABLE_PREFABS 0
 #endif
 
 namespace detail
@@ -78,6 +83,7 @@ struct converter;
 
 namespace traits
 {
+    /// @brief Helper metafunction to return type unchanged
     template<class T>
     struct type_identity
     {
@@ -219,7 +225,7 @@ namespace detail
     _DD_DEFINE_UNARY_OPERATOR(+);
     _DD_DEFINE_UNARY_OPERATOR(-);
     _DD_DEFINE_UNARY_OPERATOR(~);
-    
+
     /// @brief Provides all size-agnostic in-class functionality for vector expressions
     /// @param Child The child vector expression type, for use in CRTP
     template<class Child>
@@ -248,7 +254,7 @@ namespace detail
         }
 
         template<class Other, class = std::enable_if_t<traits::has_converter_v<vector_t, Other>>>
-        inline operator Other() const
+        operator Other() const
         {
             Other other;
 
@@ -265,7 +271,7 @@ namespace detail
         }
 
         ///  @brief Gets the component at specified index
-        constexpr inline scalar_t at(size_t index) const
+        constexpr scalar_t at(size_t index) const
         {
             return _child()[index];
         }
@@ -363,38 +369,38 @@ namespace detail
 
         /// @brief Creates an operation to apply a function to all components
         template<class Fn, class = std::enable_if_t<std::is_invocable_v<Fn, scalar_t>>>
-        inline constexpr _DD_OPERATION_T apply(const Fn& fn) const noexcept
+        constexpr _DD_OPERATION_T apply(const Fn& fn) const noexcept
         {
             return operation{ fn, _child() };
         }
 
         /// @brief Creates an operation to take the absolute value of each component
-        inline constexpr _DD_OPERATION_T abs() const noexcept
+        constexpr _DD_OPERATION_T abs() const noexcept
         {
             return apply([](scalar_t v) { return std::abs(v); });
         }
 
         /// @brief Creates an operation to round each component
-        inline constexpr _DD_OPERATION_T round() const noexcept
+        constexpr _DD_OPERATION_T round() const noexcept
         {
             return apply([](scalar_t v) { return std::round(v); });
         }
 
         /// @brief Creates an operation to floor each component
-        inline constexpr _DD_OPERATION_T floor() const noexcept
+        constexpr _DD_OPERATION_T floor() const noexcept
         {
             return apply([](scalar_t v) { return std::floor(v); });
         }
 
         /// @brief Creates an operation to ceil each component
-        inline constexpr _DD_OPERATION_T ceil() const noexcept
+        constexpr _DD_OPERATION_T ceil() const noexcept
         {
             return apply([](scalar_t v) { return std::ceil(v); });
         }
 
         /// @brief Creates an operation to cast each component
         template<class Scalar, class = std::enable_if_t<std::is_arithmetic_v<Scalar>>>
-        inline constexpr _DD_OPERATION_T scalar_cast() const noexcept
+        constexpr _DD_OPERATION_T scalar_cast() const noexcept
         {
             return apply([](scalar_t v) { return (Scalar)v; });
         }
@@ -415,12 +421,12 @@ namespace detail
             return out + ")";
         }
     protected:
-        constexpr inline const Child& _child() const noexcept
+        constexpr const Child& _child() const noexcept
         {
             return static_cast<const Child&>(*this);
         }
     };
-
+    
     /// @defgroup Expressions
     /// @brief Provides all in-class functionality to vector expressions
     /// @param Child The child vector expression type, for use in CRTP
@@ -497,7 +503,7 @@ namespace detail
         operation(const Op_fn& op, const Operands&... args) noexcept : _operands(args...), _op(op) {}
 
         /// @brief Evaluates component at an index
-        inline constexpr scalar_t operator[](size_t index) const
+        constexpr scalar_t operator[](size_t index) const
         {
             auto evaulate_index = [&](const Operands&... args)
             {
@@ -522,7 +528,7 @@ namespace detail
         const Op_fn& _op;
 
         template<class T>
-        static inline constexpr scalar_t _get_operand_at(const T& value, size_t index)
+        static constexpr scalar_t _get_operand_at(const T& value, size_t index)
         {
             if constexpr(traits::is_expression_v<T>)
                 return value[index];
@@ -536,7 +542,7 @@ namespace detail
     ///        (e.g. vector.x, vector.y).
     /// @details Each component is a reference to the value at its associated index in the
     ///          `value::data` array
-    template<class Scalar, size_t Size, bool = DD_ENABLE_NAMES>
+    template<class Scalar, size_t Size, bool = !DD_DISABLE_NAMES>
     struct component_names
     {
         constexpr component_names(Scalar*) noexcept {}
@@ -594,16 +600,22 @@ namespace detail
 
         /// @brief The vector size of the value
         using base::size;
-
-        /// @brief Vector value filled with zeroes
-        const static value zero;
-
-        /// @brief Vector value filled with ones
-        const static value identity;
               
         /// @brief Houses the data for the vector value
         scalar_t data[size];
         
+#if !DD_DISABLE_PREFABS
+        /// @defgroup Prefabs
+        /// @brief Prefabricated vector values
+
+        /// @ingroup Prefabs
+        /// @brief Vector value filled with zeroes
+        const static value zero;
+
+        /// @ingroup Prefabs
+        /// @brief Vector value filled with ones
+        const static value identity;
+#endif
         /// @brief Default constructs the vector value
         /// @details All components will be initialized to 0
         constexpr value() noexcept : component_names(data), data{} {}
@@ -616,7 +628,7 @@ namespace detail
 
         /// @brief Constructs a vector value from a single repeated value
         /// @details All components will be initialized to v
-        constexpr explicit value(scalar_t scalar) noexcept : component_names(data)
+        constexpr explicit value(scalar_t scalar) noexcept : value()
         {
             for (size_t i = 0; i < size; i++)
                 data[i] = scalar;
@@ -625,7 +637,7 @@ namespace detail
         /// @brief Copies component values from another vector value of the same type
         /// @details This function is defined explicitly to ensure component_names is
         ///          initialized properly
-        constexpr value(const value& other) noexcept : component_names(data)
+        constexpr value(const value& other) noexcept : value()
         {
             assign(other);
         }
@@ -634,7 +646,7 @@ namespace detail
         /// @details Vector values are copied normally. Vector operations are evaluated and copied.
         ///          Foreign types with a converter specialization defined are converted and then copied.
         template<class Other, class = std::enable_if_t<traits::is_same_size_v<value, Other> || traits::has_converter_v<value, Other>>>
-        constexpr value(const Other& other) : component_names(data)
+        constexpr value(const Other& other) : value()
         {
             if constexpr(traits::is_same_size_v<value, Other>)
                 assign(other);
@@ -644,20 +656,20 @@ namespace detail
 
         /// @brief Copy assignment operator
         template<class Expr, class = std::enable_if_t<traits::is_same_size_v<value, Expr>>>
-        inline constexpr value& operator=(const Expr& expr)
+        constexpr value& operator=(const Expr& expr)
         {
             assign(expr);
             return *this;
         }
 
         /// @brief Gets the component value at an index
-        inline constexpr scalar_t operator[](size_t index) const noexcept
+        constexpr scalar_t operator[](size_t index) const noexcept
         {
             return data[index];
         }
 
         /// @brief Gets a reference to the component at an index
-        inline constexpr scalar_t& operator[](size_t index) noexcept
+        constexpr scalar_t& operator[](size_t index) noexcept
         {
             return data[index];
         }
@@ -706,9 +718,14 @@ namespace detail
 template<class Scalar, size_t Size>
 using vector = detail::value<Scalar, Size>;
 
-/// @brief For convenience, the following aliases for the vector type have been defined and can be accessed
-///        either under the `dd` namespace or in the global namespace by adding `using namespace dd::types`
-///        to your source (note that this does not leak any additional symbols).
+#if !DD_DISABLE_PREFABS
+template<class S, size_t N>
+const vector<S, N> vector<S, N>::zero(0);
+
+template<class S, size_t N>
+const vector<S, N> vector<S, N>::identity(1);
+#endif
+
 namespace types
 {
     // 2D
@@ -748,12 +765,6 @@ namespace types
 // bring the vector types to the dd namespace
 using namespace types;
 
-template<class Scalar, size_t Size>
-const vector<Scalar, Size> vector<Scalar, Size>::zero(0);
-
-template<class Scalar, size_t Size>
-const vector<Scalar, Size> vector<Scalar, Size>::identity(1);
-
 
 _DD_NAMESPACE_CLOSE
 
@@ -776,7 +787,7 @@ namespace std
         {
             // interpret data as a string_view and use the string_view hasher
 
-            std::string_view byte_data = { (char*)v.data, Size * sizeof(Scalar) };
+            std::string_view byte_data = { static_cast<char*>(v.data), Size * sizeof(Scalar) };
             std::hash<std::string_view> string_hash;
             return string_hash(byte_data);
         }
