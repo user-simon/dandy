@@ -82,8 +82,6 @@ namespace detail
 template<class Dandy, class Foreign>
 struct converter;
 
-/// @brief Defines metafunctions related to vector expressions
-/// @details These are not intended to be of use to the user and are included in the documentation only for posterity
 namespace traits
 {
     /// @brief Helper metafunction to return type unchanged
@@ -245,6 +243,7 @@ namespace detail
             return _child()[index];
         }
 
+        /// @brief Determines if all components are equal to all corresponding components of a different vector expression
         template<class Expr, class = std::enable_if_t<traits::is_same_size_v<Expr, Child>>>
         constexpr bool operator==(const Expr& expr) const noexcept
         {
@@ -256,6 +255,7 @@ namespace detail
             return true;
         }
 
+        /// @brief Determines if at least one component is not equal to its corresponding component of a different vector expression
         template<class Expr, class = std::enable_if_t<traits::is_same_size_v<Expr, Child>>>
         constexpr bool operator!=(const Expr& expr) const noexcept
         {
@@ -267,23 +267,25 @@ namespace detail
             return false;
         }
 
+        /// @brief Determines if all components are lesser than their corresponding components of a different vector expression
         template<class Expr, class = std::enable_if_t<traits::is_same_size_v<Expr, Child>>>
-        constexpr bool operator>(const Expr& expr) const noexcept
+        constexpr bool operator<(const Expr& expr) const noexcept
         {
             for (size_t i = 0; i < size; i++)
             {
-                if (at(i) <= expr[i])
+                if (at(i) >= expr[i])
                     return false;
             }
             return true;
         }
 
+        /// @brief Determines if all components are lesser than or equal to their corresponding components of a different vector expression
         template<class Expr, class = std::enable_if_t<traits::is_same_size_v<Expr, Child>>>
-        constexpr bool operator>=(const Expr& expr) const noexcept
+        constexpr bool operator<=(const Expr& expr) const noexcept
         {
             for (size_t i = 0; i < size; i++)
             {
-                if (at(i) < expr[i])
+                if (at(i) > expr[i])
                     return false;
             }
             return true;
@@ -307,7 +309,7 @@ namespace detail
             return nonzero();
         }
 
-        /// @brief Determines if the vector is non-zero, that is if the vector has a non-zero component
+        /// @brief Determines if at least one component is non-zero
         constexpr bool nonzero() const noexcept
         {
             for (size_t i = 0; i < size; i++)
@@ -318,6 +320,7 @@ namespace detail
             return false;
         }
 
+        /// @brief Determines if at least one component is equal to a scalar value
         template<class T, class = std::enable_if_t<std::is_arithmetic_v<T>>>
         constexpr bool contains(T value) const noexcept
         {
@@ -402,7 +405,7 @@ namespace detail
             return normalize() * length;
         }
 
-        /// @brief Calculates the delta angle to another vector
+        /// @brief Calculates the delta angle to another vector expression
         template<class Expr, class = std::enable_if_t<traits::is_same_size_v<Expr, Child>>>
         double delta_angle(const Expr& expr) const
         {
@@ -448,7 +451,7 @@ namespace detail
         }
 
         /// @brief Serializes the vector to a string
-        /// @param name Can be provided to differentiate between multiple vector values
+        /// @param name Can be provided to differentiate between multiple vectors
         std::string to_string(const std::string& name = "") const noexcept
         {
             std::string out = name + "(";
@@ -484,7 +487,7 @@ namespace detail
         using base = expression_base<Child>;
         using typename base::vector_t;
     public:
-        /// @brief Calculates the angle represented by the vector expression
+        /// @brief Calculates the angle represented by the components
         double angle() const noexcept
         {
             return std::atan2(base::at(1), base::at(0));
@@ -532,10 +535,10 @@ namespace detail
     private:
         using base = expression<operation>;
     public:
-        /// @brief The scalar type result of the operation
+        /// @brief The scalar result type of the operation
         using typename base::scalar_t;
 
-        /// @brief The vector type result of the operation
+        /// @brief The vector result type of the operation
         using typename base::vector_t;
 
         /// @brief The size of the vectors in the operation
@@ -669,7 +672,7 @@ namespace detail
         constexpr value(const Scalars&... scalars) noexcept : component_names(data), data{ (scalar_t)scalars... } {}
 
         /// @brief Constructs a vector value from a single repeated value
-        /// @details All components will be initialized to v
+        /// @details All components will be initialized to `scalar`
         constexpr explicit value(scalar_t scalar) noexcept : value()
         {
             for (size_t i = 0; i < size; i++)
