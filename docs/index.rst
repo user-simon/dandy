@@ -12,6 +12,7 @@ Contents
    pages/api
    pages/conversions
    pages/disable_names
+   pages/disable_prefabs
    pages/type_traits
 
 * :ref:`genindex`

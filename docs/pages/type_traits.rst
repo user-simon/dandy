@@ -1,6 +1,10 @@
 Type traits
 ===========
 
+The following are metafunctions related to vector expressions.
+
+These are not intended to be of use to the user and are included in the documentation only for posterity
+
 .. doxygenvariable:: traits::is_value_v
 .. doxygenvariable:: traits::is_operation_v
 .. doxygenvariable:: traits::is_expression_v

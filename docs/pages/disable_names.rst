@@ -1,9 +1,12 @@
 Disabling Component Names
 =========================
 
-If you for whatever reason want to disable the named vector components, that is, make components only
-accessible by index, you can do so with the following macro:
+Component names might invoke a slight performance penalty due to increased complexity when constructing
+a vector value since each named component variable has to bind to their respective indices in the data array.
+As such, if one should not need them and is content to access components only by index, there is an
+option to disable them.
 
-.. doxygendefine:: DD_ENABLE_NAMES
+.. doxygendefine:: DD_DISABLE_NAMES
 
-Add the define to your source before the header is included.
+Add the define to your source before the header is included and vector values will no longer be compiled with
+named component variables.
