@@ -7,6 +7,7 @@
 #include <functional> // std::hash
 #include <algorithm>  // std::max
 #include <cstdint>    // fixed width integer types
+#include <cmath>      // std::sqrt, std::sin, std::acos, std::atan2
 
 #define _DD_NAMESPACE_OPEN namespace dd {
 #define _DD_NAMESPACE_CLOSE }
@@ -81,6 +82,8 @@ namespace detail
 template<class Dandy, class Foreign>
 struct converter;
 
+/// @brief Defines metafunctions related to vector expressions
+/// @details These are not intended to be of use to the user and are included in the documentation only for posterity
 namespace traits
 {
     /// @brief Helper metafunction to return type unchanged
@@ -236,6 +239,12 @@ namespace detail
         using vector_t = traits::vector_t<Child>;
         constexpr static size_t size = traits::size_v<Child>;
     public:
+        ///  @brief Gets the component at specified index
+        constexpr scalar_t at(size_t index) const
+        {
+            return _child()[index];
+        }
+
         template<class Expr, class = std::enable_if_t<traits::is_same_size_v<Expr, Child>>>
         constexpr bool operator==(const Expr& expr) const noexcept
         {
@@ -250,18 +259,46 @@ namespace detail
         template<class Expr, class = std::enable_if_t<traits::is_same_size_v<Expr, Child>>>
         constexpr bool operator!=(const Expr& expr) const noexcept
         {
-            return !operator==(expr);
+            for (size_t i = 0; i < size; i++)
+            {
+                if (at(i) != expr[i])
+                    return true;
+            }
+            return false;
         }
 
+        template<class Expr, class = std::enable_if_t<traits::is_same_size_v<Expr, Child>>>
+        constexpr bool operator>(const Expr& expr) const noexcept
+        {
+            for (size_t i = 0; i < size; i++)
+            {
+                if (at(i) <= expr[i])
+                    return false;
+            }
+            return true;
+        }
+
+        template<class Expr, class = std::enable_if_t<traits::is_same_size_v<Expr, Child>>>
+        constexpr bool operator>=(const Expr& expr) const noexcept
+        {
+            for (size_t i = 0; i < size; i++)
+            {
+                if (at(i) < expr[i])
+                    return false;
+            }
+            return true;
+        }
+        
         template<class Other, class = std::enable_if_t<traits::has_converter_v<vector_t, Other>>>
         operator Other() const
         {
+            using converter = converter<vector_t, Other>;
             Other other;
 
             if constexpr(traits::is_value_v<Child>)
-                converter<vector_t, Other>::convert(_child(), other);
+                converter::convert(_child(), other);
             else
-                converter<vector_t, Other>::convert(_child().evaluate(), other);
+                converter::convert(_child().evaluate(), other);
             return other;
         }
         
@@ -270,12 +307,28 @@ namespace detail
             return nonzero();
         }
 
-        ///  @brief Gets the component at specified index
-        constexpr scalar_t at(size_t index) const
+        /// @brief Determines if the vector is non-zero, that is if the vector has a non-zero component
+        constexpr bool nonzero() const noexcept
         {
-            return _child()[index];
+            for (size_t i = 0; i < size; i++)
+            {
+                if (at(i))
+                    return true;
+            }
+            return false;
         }
 
+        template<class T, class = std::enable_if_t<std::is_arithmetic_v<T>>>
+        constexpr bool contains(T value) const noexcept
+        {
+            for (size_t i = 0; i < size; i++)
+            {
+                if (at(i) == value)
+                    return true;
+            }
+            return false;
+        }
+        
         /// @brief Sums all components
         constexpr scalar_t sum() const noexcept
         {
@@ -294,17 +347,6 @@ namespace detail
             for (size_t i = 0; i < size; i++)
                 out *= at(i);
             return out;
-        }
-
-        /// @brief Determines if vector is non-zero, that is if the vector has a non-zero component
-        constexpr bool nonzero() const noexcept
-        {
-            for (size_t i = 0; i < size; i++)
-            {
-                if (at(i))
-                    return true;
-            }
-            return false;
         }
 
         /// @brief Calculates the dot product with another vector expression
@@ -347,7 +389,7 @@ namespace detail
         }
 
         /// @brief Calculates the normalized vector
-        /// @details Analagous to writing `vector / vector.length()``
+        /// @details Analagous to writing `vector / vector.length()`
         value<double, size> normalize() const
         {
             return _child() / length();
@@ -415,7 +457,7 @@ namespace detail
             {
                 out += std::to_string(at(i));
 
-                if (i < (size - 1)) [[likely]]
+                if (i < (size - 1))
                     out += ", ";
             }
             return out + ")";
@@ -623,8 +665,8 @@ namespace detail
         /// @brief Constructs a vector value from individual component values
         /// @details Expects as many arguments as the vector size and that each argument
         ///          is convertible to the vector scalar type
-        template<class... Scalars, class = std::enable_if_t<sizeof...(Scalars) == Size && std::conjunction_v<std::is_convertible<Scalars, scalar_t>...>>>
-        constexpr value(const Scalars&... args) noexcept : component_names(data), data{ (scalar_t)args... } {}
+        template<class... Scalars, class = std::enable_if_t<(sizeof...(Scalars) == Size) && (std::is_convertible_v<Scalars, scalar_t> && ...)>>
+        constexpr value(const Scalars&... scalars) noexcept : component_names(data), data{ (scalar_t)scalars... } {}
 
         /// @brief Constructs a vector value from a single repeated value
         /// @details All components will be initialized to v
