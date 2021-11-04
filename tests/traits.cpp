@@ -1,13 +1,13 @@
 #include "common.h"
 
 template<class T>
-struct Traits : testing::Test {};
-TYPED_TEST_SUITE(Traits, vector_types);
+struct TraitsAll : testing::Test {};
+TYPED_TEST_SUITE(TraitsAll, vector_types);
 
-TYPED_TEST(Traits, Type_requirements)
+TYPED_TEST(TraitsAll, Type_requirements)
 {
     USING_TYPE_INFO
-    
+
     EXPECT_TRUE(std::is_default_constructible_v<vector_t>);
     EXPECT_TRUE(std::is_move_constructible_v<vector_t>);
     EXPECT_TRUE(std::is_copy_constructible_v<vector_t>);
@@ -15,9 +15,22 @@ TYPED_TEST(Traits, Type_requirements)
     EXPECT_TRUE(std::is_copy_assignable_v<vector_t>);
     EXPECT_TRUE(std::is_destructible_v<vector_t>);
     EXPECT_TRUE(std::is_swappable_v<vector_t>);
+
+    // make sure the vector constructors are compile-time evaluatable
+
+    constexpr static vector_t a = make_index_vector_v<vector_t>;
+    constexpr static vector_t b = a;
+    constexpr static vector_t c = a + b;
+
+    for (size_t i = 0; i < size; i++)
+    {
+        EXPECT_EQ(a[i], i);
+        EXPECT_EQ(b[i], i);
+        EXPECT_EQ(c[i], 2 * i);
+    }
 }
 
-TYPED_TEST(Traits, Categories)
+TYPED_TEST(TraitsAll, Categories)
 {
     USING_TYPE_INFO
 
@@ -31,7 +44,7 @@ TYPED_TEST(Traits, Categories)
     EXPECT_TRUE(traits::is_expression_v<operation_t>);
 }
 
-TYPED_TEST(Traits, Type_relationships)
+TYPED_TEST(TraitsAll, Type_relationships)
 {
     USING_TYPE_INFO
 
