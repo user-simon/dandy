@@ -227,6 +227,62 @@ namespace detail
     _DD_DEFINE_UNARY_OPERATOR(-);
     _DD_DEFINE_UNARY_OPERATOR(~);
 
+    template<class Expr1, class Expr2, class = std::enable_if_t<traits::is_same_size_v<Expr1, Expr2>>>
+    constexpr inline bool operator==(const Expr1& expr1, const Expr2& expr2) noexcept
+    {
+        for (size_t i = 0; i < Expr1::size; i++)
+        {
+            if (expr1[i] != expr2[i])
+                return false;
+        }
+        return true;
+    }
+
+    template<class Expr1, class Expr2, class = std::enable_if_t<traits::is_same_size_v<Expr1, Expr2>>>
+    constexpr inline bool operator!=(const Expr1& expr1, const Expr2& expr2) noexcept
+    {
+        for (size_t i = 0; i < Expr1::size; i++)
+        {
+            if (expr1[i] != expr2[i])
+                return true;
+        }
+        return false;
+    }
+
+    template<class Expr1, class Expr2, class = std::enable_if_t<traits::is_same_size_v<Expr1, Expr2>>>
+    constexpr inline bool operator<(const Expr1& expr1, const Expr2& expr2) noexcept
+    {
+        for (size_t i = 0; i < Expr1::size; i++)
+        {
+            if (expr1[i] >= expr2[i])
+                return false;
+        }
+        return true;
+    }
+
+    template<class Expr1, class Expr2, class = std::enable_if_t<traits::is_same_size_v<Expr1, Expr2>>>
+    constexpr inline bool operator<=(const Expr1& expr1, const Expr2& expr2) noexcept
+    {
+        for (size_t i = 0; i < Expr1::size; i++)
+        {
+            if (expr1[i] > expr2[i])
+                return false;
+        }
+        return true;
+    }
+
+    template<class Expr1, class Expr2, class = std::enable_if_t<traits::is_same_size_v<Expr1, Expr2>>>
+    constexpr bool operator>(const Expr1& expr1, const Expr2& expr2) noexcept
+    {
+        return expr2 < expr1;
+    }
+
+    template<class Expr1, class Expr2, class = std::enable_if_t<traits::is_same_size_v<Expr1, Expr2>>>
+    constexpr bool operator>=(const Expr1& expr1, const Expr2& expr2) noexcept
+    {
+        return expr2 <= expr1;
+    }
+
     /// @brief Provides all size-agnostic in-class functionality for vector expressions
     /// @param Child The child vector expression type, for use in CRTP
     template<class Child>
@@ -241,54 +297,6 @@ namespace detail
         constexpr scalar_t at(size_t index) const
         {
             return _child()[index];
-        }
-
-        /// @brief Determines if all components are equal to all corresponding components of a different vector expression
-        template<class Expr, class = std::enable_if_t<traits::is_same_size_v<Expr, Child>>>
-        constexpr bool operator==(const Expr& expr) const noexcept
-        {
-            for (size_t i = 0; i < size; i++)
-            {
-                if (at(i) != expr[i])
-                    return false;
-            }
-            return true;
-        }
-
-        /// @brief Determines if at least one component is not equal to its corresponding component of a different vector expression
-        template<class Expr, class = std::enable_if_t<traits::is_same_size_v<Expr, Child>>>
-        constexpr bool operator!=(const Expr& expr) const noexcept
-        {
-            for (size_t i = 0; i < size; i++)
-            {
-                if (at(i) != expr[i])
-                    return true;
-            }
-            return false;
-        }
-
-        /// @brief Determines if all components are lesser than their corresponding components of a different vector expression
-        template<class Expr, class = std::enable_if_t<traits::is_same_size_v<Expr, Child>>>
-        constexpr bool operator<(const Expr& expr) const noexcept
-        {
-            for (size_t i = 0; i < size; i++)
-            {
-                if (at(i) >= expr[i])
-                    return false;
-            }
-            return true;
-        }
-
-        /// @brief Determines if all components are lesser than or equal to their corresponding components of a different vector expression
-        template<class Expr, class = std::enable_if_t<traits::is_same_size_v<Expr, Child>>>
-        constexpr bool operator<=(const Expr& expr) const noexcept
-        {
-            for (size_t i = 0; i < size; i++)
-            {
-                if (at(i) > expr[i])
-                    return false;
-            }
-            return true;
         }
         
         template<class Other, class = std::enable_if_t<traits::has_converter_v<vector_t, Other>>>
@@ -545,7 +553,7 @@ namespace detail
         using base::size;
         
         /// @brief Constructs a vector operation from a function and operands
-        operation(const Op_fn& op, const Operands&... args) noexcept : _operands(args...), _op(op) {}
+        constexpr operation(const Op_fn& op, const Operands&... args) noexcept : _operands(args...), _op(op) {}
 
         /// @brief Evaluates component at an index
         constexpr scalar_t operator[](size_t index) const
