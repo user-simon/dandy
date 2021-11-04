@@ -553,10 +553,10 @@ namespace detail
         using base::size;
         
         /// @brief Constructs a vector operation from a function and operands
-        constexpr operation(const Op_fn& op, const Operands&... args) noexcept : _operands(args...), _op(op) {}
+        constexpr operation(const Op_fn op, const Operands&... args) noexcept : _op(op), _operands(args...) {}
 
         /// @brief Evaluates component at an index
-        constexpr scalar_t operator[](size_t index) const
+        constexpr scalar_t operator[](const size_t index) const
         {
             auto evaulate_index = [&](const Operands&... args)
             {
@@ -574,20 +574,20 @@ namespace detail
         /// @brief Evaluates vector operation to a vector value
         constexpr vector_t evaluate() const noexcept
         {
-            return (vector_t)*this; // call the value constructor
+            return vector_t(*this);
         }
     private:
-        const std::tuple<const Operands&...> _operands;
-        const Op_fn& _op;
-
         template<class T>
-        static constexpr scalar_t _get_operand_at(const T& value, size_t index)
+        static constexpr scalar_t _get_operand_at(const T& value, const size_t index)
         {
             if constexpr(traits::is_expression_v<T>)
                 return value[index];
             else
                 return value;
         }
+
+        const Op_fn _op;
+        const std::tuple<const Operands&...> _operands;
     };
     
     /// @defgroup ComponentNames
