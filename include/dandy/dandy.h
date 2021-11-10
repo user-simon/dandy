@@ -27,7 +27,7 @@
     constexpr _DD_OPERATION_T operator op##=(L& l, const R& r)                                      \
     {                                                                                               \
         return l = l op r;                                                                          \
-    }                                                                                               \
+    }
 
 #define _DD_DEFINE_UNARY_OPERATOR(op)                                             \
     template<class Expr, class = std::enable_if_t<traits::is_expression_v<Expr>>> \
@@ -38,7 +38,7 @@
             [](const auto& v) { return op(v); },                                  \
             expr                                                                  \
         };                                                                        \
-    }                                                                             \
+    }
 
 
 _DD_NAMESPACE_OPEN
@@ -84,7 +84,7 @@ struct converter;
 
 namespace traits
 {
-    /// @brief Helper metafunction to return type unchanged
+    /// @brief Helper metafunction to return template type unchanged
     template<class T>
     struct type_identity
     {
@@ -201,10 +201,10 @@ namespace traits
     struct has_converter : std::false_type {};
 
     template<class T, class U>
-    struct has_converter<T, U, std::void_t<
-        decltype(converter<T, U>::convert(std::declval<T>(), std::declval<U&>())),  // has T -> U
-        decltype(converter<T, U>::convert(std::declval<U>(), std::declval<T&>()))>> // has U -> T
-    : std::true_type {};
+    struct has_converter<T, U, std::void_t<decltype(
+        converter<T, U>::convert(std::declval<T>(), std::declval<U&>()), // has T -> U
+        converter<T, U>::convert(std::declval<U>(), std::declval<T&>())  // has U -> T
+    )>> : std::true_type {};
 
     template<class T, class U>
     inline constexpr bool has_converter_v = has_converter<T, U>::value;
@@ -294,7 +294,7 @@ namespace detail
         constexpr static size_t size = traits::size_v<Child>;
     public:
         ///  @brief Gets the component at specified index
-        constexpr scalar_t at(size_t index) const
+        constexpr scalar_t at(const size_t index) const
         {
             return _child()[index];
         }
@@ -302,13 +302,8 @@ namespace detail
         template<class Other, class = std::enable_if_t<traits::has_converter_v<vector_t, Other>>>
         operator Other() const
         {
-            using converter = converter<vector_t, Other>;
             Other other;
-
-            if constexpr(traits::is_value_v<Child>)
-                converter::convert(_child(), other);
-            else
-                converter::convert(_child().evaluate(), other);
+            converter<vector_t, Other>::convert(_child(), other);
             return other;
         }
         
@@ -330,7 +325,7 @@ namespace detail
 
         /// @brief Determines if at least one component is equal to a scalar value
         template<class T, class = std::enable_if_t<std::is_arithmetic_v<T>>>
-        constexpr bool contains(T value) const noexcept
+        constexpr bool contains(const T value) const noexcept
         {
             for (size_t i = 0; i < size; i++)
             {
@@ -374,7 +369,8 @@ namespace detail
         /// @brief Calculates the Euclidian length squared
         constexpr scalar_t length2() const noexcept
         {
-            return dot(_child());
+            const vector_t& value = _child(); // implicitly evaluate if Child is an operation
+            return value.dot(value);
         }
 
         /// @brief Calculates the Euclidian length
@@ -408,7 +404,7 @@ namespace detail
 
         /// @brief Sets the Euclidian length
         /// @details Analogous to writing `vector.normalize() * length`
-        value<double, size> set_length(double length) const noexcept
+        value<double, size> set_length(const double length) const noexcept
         {
             return normalize() * length;
         }
@@ -430,24 +426,28 @@ namespace detail
         /// @brief Creates an operation to take the absolute value of each component
         constexpr _DD_OPERATION_T abs() const noexcept
         {
-            return apply([](scalar_t v) { return std::abs(v); });
+           static_assert(std::is_signed_v<scalar_t>, "Cannot take the absolute value of an unsigned vector type");
+           return apply([](scalar_t v) { return std::abs(v); });
         }
 
         /// @brief Creates an operation to round each component
         constexpr _DD_OPERATION_T round() const noexcept
         {
+            static_assert(std::is_floating_point_v<scalar_t>, "Cannot round an integer");
             return apply([](scalar_t v) { return std::round(v); });
         }
 
         /// @brief Creates an operation to floor each component
         constexpr _DD_OPERATION_T floor() const noexcept
         {
+            static_assert(std::is_floating_point_v<scalar_t>, "Cannot floor an integer");
             return apply([](scalar_t v) { return std::floor(v); });
         }
 
         /// @brief Creates an operation to ceil each component
         constexpr _DD_OPERATION_T ceil() const noexcept
         {
+            static_assert(std::is_floating_point_v<scalar_t>, "Cannot take the ceiling of an integer");
             return apply([](scalar_t v) { return std::ceil(v); });
         }
 
@@ -455,7 +455,7 @@ namespace detail
         template<class Scalar, class = std::enable_if_t<std::is_arithmetic_v<Scalar>>>
         constexpr _DD_OPERATION_T scalar_cast() const noexcept
         {
-            return apply([](scalar_t v) { return (Scalar)v; });
+            return apply([](scalar_t v) { return static_cast<Scalar>(v); });
         }
 
         /// @brief Serializes the vector to a string
@@ -502,7 +502,7 @@ namespace detail
         }
 
         /// @brief Constructs the vector value representation of an angle
-        static vector_t from_angle(double angle) noexcept
+        static vector_t from_angle(const double angle) noexcept
         {
             return
             {
@@ -681,7 +681,7 @@ namespace detail
 
         /// @brief Constructs a vector value from a single repeated value
         /// @details All components will be initialized to `scalar`
-        constexpr explicit value(scalar_t scalar) noexcept : value()
+        constexpr explicit value(const scalar_t scalar) noexcept : value()
         {
             for (size_t i = 0; i < size; i++)
                 data[i] = scalar;
@@ -711,18 +711,17 @@ namespace detail
         template<class Expr, class = std::enable_if_t<traits::is_same_size_v<value, Expr>>>
         constexpr value& operator=(const Expr& expr)
         {
-            assign(expr);
-            return *this;
+            return assign(expr);
         }
 
         /// @brief Gets the component value at an index
-        constexpr scalar_t operator[](size_t index) const noexcept
+        constexpr scalar_t operator[](const size_t index) const noexcept
         {
             return data[index];
         }
 
         /// @brief Gets a reference to the component at an index
-        constexpr scalar_t& operator[](size_t index) noexcept
+        constexpr scalar_t& operator[](const size_t index) noexcept
         {
             return data[index];
         }
