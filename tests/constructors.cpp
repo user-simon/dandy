@@ -1,10 +1,10 @@
 #include "common.h"
 
 template<class T>
-struct Constructors : testing::Test {};
-TYPED_TEST_SUITE(Constructors, vector_types);
+struct ConstructorsAll : testing::Test {};
+TYPED_TEST_SUITE(ConstructorsAll, all_vectors);
 
-TYPED_TEST(Constructors, Default)
+TYPED_TEST(ConstructorsAll, Default)
 {
     USING_TYPE_INFO
 
@@ -14,7 +14,7 @@ TYPED_TEST(Constructors, Default)
         EXPECT_EQ(v.at(i), 0);
 }
 
-TYPED_TEST(Constructors, Copy)
+TYPED_TEST(ConstructorsAll, Copy)
 {
     USING_TYPE_INFO
     
@@ -29,7 +29,7 @@ TYPED_TEST(Constructors, Copy)
     }
 }
 
-TYPED_TEST(Constructors, Value)
+TYPED_TEST(ConstructorsAll, Value)
 {
     USING_TYPE_INFO
 
@@ -39,7 +39,7 @@ TYPED_TEST(Constructors, Value)
         EXPECT_EQ(v.at(i), i);
 }
 
-TYPED_TEST(Constructors, Repeated)
+TYPED_TEST(ConstructorsAll, Repeated)
 {
     USING_TYPE_INFO
 
@@ -48,4 +48,21 @@ TYPED_TEST(Constructors, Repeated)
 
     for (size_t i = 0; i < size; i++)
         EXPECT_EQ(v.at(i), s);
+}
+
+TEST(Constructors, ComponentNames)
+{
+    int2d a { 1, 2 };
+    int2d b { 3, 4 };
+
+    // make sure components get bound to correct data
+    EXPECT_EQ(a.x, 1);
+    EXPECT_EQ(a.y, 2);
+
+    a = b;
+    b = { 0, 0 };
+
+    // make sure components don't get rebound after assignment
+    EXPECT_EQ(a.x, 3);
+    EXPECT_EQ(a.y, 4);
 }

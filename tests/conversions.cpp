@@ -2,8 +2,8 @@
 #include <array>
 
 template<class T>
-struct Conversions : testing::Test {};
-TYPED_TEST_SUITE(Conversions, vector_types);
+struct ConversionsAll : testing::Test {};
+TYPED_TEST_SUITE(ConversionsAll, all_vectors);
 
 template<class T, size_t N>
 struct converter<vector<T, N>, std::array<T, N>>
@@ -24,24 +24,20 @@ struct converter<vector<T, N>, std::array<T, N>>
     }
 };
 
-TYPED_TEST(Conversions, Array_conversion)
+TYPED_TEST(ConversionsAll, Array_conversion)
 {
     USING_TYPE_INFO
 
     vector_t vec = random_vector<vector_t>();
-    std::array<scalar_t, size> arr = vec;
 
-    // expect array to be equal to vector and double all indices
+    // cast result to avoid type-promotion issues when multiplying a char
+    std::array<scalar_t, size> arr = (2 * vec).scalar_cast<scalar_t>();
+
     for (size_t i = 0; i < size; i++)
-    {
-        EXPECT_EQ(arr[i], vec[i]);
-        arr[i] *= 2;
-    }
+        EXPECT_EQ(arr[i], (scalar_t)(2 * vec[i]));
 
     vec = arr;
 
     for (size_t i = 0; i < size; i++)
-    {
         EXPECT_EQ(vec[i], arr[i]);
-    }
 }

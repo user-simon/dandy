@@ -2,7 +2,7 @@
 
 template<class T>
 struct TraitsAll : testing::Test {};
-TYPED_TEST_SUITE(TraitsAll, vector_types);
+TYPED_TEST_SUITE(TraitsAll, all_vectors);
 
 TYPED_TEST(TraitsAll, Type_requirements)
 {
@@ -56,4 +56,15 @@ TYPED_TEST(TraitsAll, Type_relationships)
 
     EXPECT_FALSE((traits::is_valid_operation_v<scalar_t, vector_t, true>));
     EXPECT_FALSE((traits::is_valid_operation_v<scalar_t, operation_t, true>));
+}
+
+TYPED_TEST(TraitsAll, Prefabs)
+{
+    USING_TYPE_INFO
+
+    for (scalar_t s : vector_t::zero)
+        EXPECT_EQ(s, 0);
+
+    for (scalar_t s : vector_t::identity)
+        EXPECT_EQ(s, 1);
 }
