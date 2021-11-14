@@ -13,5 +13,4 @@ These are not intended to be of use to the user and are included in the document
 .. doxygentypedef:: traits::vector_t
 .. doxygenvariable:: traits::is_same_size_v
 .. doxygenvariable:: traits::is_valid_operation_v
-.. doxygenvariable:: traits::has_named_components_v
 .. doxygenvariable:: traits::has_converter_v

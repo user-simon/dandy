@@ -11,9 +11,8 @@ Contents
    pages/basics
    pages/api
    pages/conversions
-   pages/disable_names
-   pages/disable_prefabs
    pages/type_traits
+   pages/components
 
 * :ref:`genindex`
 * :ref:`search`

@@ -16,7 +16,7 @@ Vector types
 .. doxygennamespace:: types
     :members:
 
-.. note:: Throughout this documentation, for the sake of clarity, a vector value refers to one of the types defined above
+.. note:: Throughout this documentation, a "vector value" will refer to any of the types defined above
 
 Construction
 ------------
@@ -91,8 +91,8 @@ Expression templates
 
 .. note::
     
-    Throughout this documentation, for the sake of brevity, ``vector expression`` refers to either a
-    vector value (:cpp:struct:`detail::value`) or a vector operation (:cpp:struct:`detail::operation`) 
+    Throughout this documentation, ``vector expression`` refers to an instance of either a vector value
+    (:cpp:struct:`impl::value`) or a vector operation (:cpp:struct:`impl::operation`) 
 
 Operator overloads
 ------------------
@@ -158,7 +158,7 @@ Operator overloads
 Indexing
 --------
 
-- Components in all vector expressions can be retrieved either with :cpp:func:`detail::expression_base::at`:
+- Components in all vector expressions can be retrieved either with :cpp:func:`impl::expression_base::at`:
 
   .. code-block:: C
 
@@ -175,7 +175,7 @@ Indexing
     float y = v[1]; // y is 2
 
 
-- :doc:`By default <disable_names>`, components in a vector value can also be accessed by name:
+- :doc:`If a compatible compiler is used <components>`, components in a vector value can also be accessed by name:
   
   .. code-block:: C
 
