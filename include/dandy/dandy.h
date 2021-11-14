@@ -16,7 +16,7 @@
     template<class L, class R, class = std::enable_if_t<traits::is_valid_operation_v<L, R, false>>> \
     constexpr _DD_OPERATION_T operator op (const L& l, const R& r)                                  \
     {                                                                                               \
-        return detail::operation                                                                    \
+        return impl::operation                                                                      \
         {                                                                                           \
             [](const auto& a, const auto& b) { return a op b; },                                    \
             l, r                                                                                    \
@@ -33,7 +33,7 @@
     template<class Expr, class = std::enable_if_t<traits::is_expression_v<Expr>>> \
     constexpr _DD_OPERATION_T operator op (const Expr& expr)                      \
     {                                                                             \
-        return detail::operation                                                  \
+        return impl::operation                                                    \
         {                                                                         \
             [](const auto& v) { return op(v); },                                  \
             expr                                                                  \
@@ -44,7 +44,7 @@
 _DD_NAMESPACE_OPEN
 
 
-namespace detail
+namespace impl
 {
     template<class>
     struct expression_base;
@@ -84,7 +84,7 @@ namespace traits
     struct is_value : std::false_type {};
 
     template<class Scalar, size_t Size>
-    struct is_value<detail::value<Scalar, Size>> : std::true_type {};
+    struct is_value<impl::value<Scalar, Size>> : std::true_type {};
 
     template<class T>
     inline constexpr bool is_value_v = is_value<T>::value;
@@ -95,7 +95,7 @@ namespace traits
     struct is_operation : std::false_type {};
 
     template<class Op_fn, class... Operands>
-    struct is_operation<detail::operation<Op_fn, Operands...>> : std::true_type {};
+    struct is_operation<impl::operation<Op_fn, Operands...>> : std::true_type {};
 
     template<class T>
     inline constexpr bool is_operation_v = is_operation<T>::value;
@@ -116,10 +116,10 @@ namespace traits
     struct scalar : type_identity<Scalar> {};
 
     template<class Op_fn, class... Operands>
-    struct scalar<detail::operation<Op_fn, Operands...>> : std::invoke_result<Op_fn, typename scalar<Operands>::type...> {};
+    struct scalar<impl::operation<Op_fn, Operands...>> : std::invoke_result<Op_fn, typename scalar<Operands>::type...> {};
 
     template<class Scalar, size_t Size>
-    struct scalar<detail::value<Scalar, Size>> : type_identity<Scalar> {};
+    struct scalar<impl::value<Scalar, Size>> : type_identity<Scalar> {};
 
     template<class Expr>
     using scalar_t = typename scalar<Expr>::type;
@@ -131,10 +131,10 @@ namespace traits
     struct size : std::integral_constant<size_t, 1> {};
 
     template<class Op_fn, class... Operands>
-    struct size<detail::operation<Op_fn, Operands...>> : std::integral_constant<size_t, std::max({ size<Operands>::value... })> {};
+    struct size<impl::operation<Op_fn, Operands...>> : std::integral_constant<size_t, std::max({ size<Operands>::value... })> {};
 
     template<class Scalar, size_t Size>
-    struct size<detail::value<Scalar, Size>> : std::integral_constant<size_t, Size> {};
+    struct size<impl::value<Scalar, Size>> : std::integral_constant<size_t, Size> {};
 
     template<class Expr>
     inline constexpr size_t size_v = size<Expr>::value;
@@ -142,7 +142,7 @@ namespace traits
     /// @typedef vector_t
     /// @brief Gets the resulting vector type of the vector expression
     template<class Expr, class = std::enable_if_t<is_expression_v<Expr>>>
-    struct _vector : type_identity<detail::value<scalar_t<Expr>, size_v<Expr>>> {};
+    struct _vector : type_identity<impl::value<scalar_t<Expr>, size_v<Expr>>> {};
 
     template<class Expr>
     struct vector : _vector<Expr> {};
@@ -186,7 +186,7 @@ namespace traits
     inline constexpr bool has_converter_v = has_converter<T, U>::value;
 }
 
-namespace detail
+namespace impl
 {
     _DD_DEFINE_BINARY_OPERATOR(+);
     _DD_DEFINE_BINARY_OPERATOR(-);
@@ -523,7 +523,7 @@ namespace detail
         using scalar_t = typename base::scalar_t;
 
         /// @brief The vector size of the value
-        constexpr static size_t size = base::size;
+        static constexpr size_t size = base::size;
 
         /// @brief The vector result type of the operation
         using vector_t = typename base::vector_t;
@@ -568,11 +568,8 @@ namespace detail
     
     /// @defgroup ValueData
     /// @brief Defines the vector value data
-    /// @details The data is stored as a `Scalar data[Size]` array. There are also specializations
-    ///          defined to add named components, mapped to each index in the data array. This is 
-    ///          done through anonymous structs which is technically non-ISO C++. If a compiler
-    ///          which does not support anonymous structs is used, these specializations should get
-    ///          SFINAE'd out and the default case is used
+    /// @details The data is stored as a `Scalar data[Size]`. There are also specializations
+    ///          defined which add named components if a compatible compiler is used
 
     /// @ingroup ValueData
     /// @brief Default case: only contains a `Scalar data[Size]` array
@@ -624,7 +621,7 @@ namespace detail
     };
 
     /// @ingroup ValueData
-    /// @brief Specialization for 3D vectors: adds components `x`, `y`, `z`, `w`
+    /// @brief Specialization for 4D vectors: adds components `x`, `y`, `z`, `w`
     template<class Scalar>
     struct value_data<Scalar, 4>
     {
@@ -658,7 +655,7 @@ namespace detail
         using scalar_t = typename base::scalar_t;
 
         /// @brief The vector size of the value
-        constexpr static size_t size = base::size;
+        static constexpr size_t size = base::size;
         
         /// @defgroup Prefabs
         /// @brief Prefabricated vector values
@@ -762,7 +759,7 @@ namespace detail
 /// @param Scalar The scalar type of the vector (e.g. `int` or `float`)
 /// @param Size The size of the vector
 template<class Scalar, size_t Size>
-using vector = detail::value<Scalar, Size>;
+using vector = impl::value<Scalar, Size>;
 
 template<class S, size_t N>
 const vector<S, N> vector<S, N>::zero(0);
