@@ -44,16 +44,6 @@
 _DD_NAMESPACE_OPEN
 
 
-/// @brief Define as 1 to disable named vector components
-#ifndef DD_DISABLE_NAMES
-#define DD_DISABLE_NAMES 0
-#endif
-
-/// @brief Define as 1 to disable prefabricated vector values
-#ifndef DD_DISABLE_PREFABS
-#define DD_DISABLE_PREFABS 0
-#endif
-
 namespace detail
 {
     template<class>
@@ -64,9 +54,6 @@ namespace detail
 
     template<class, class...>
     struct operation;
-
-    template<class, size_t, bool>
-    struct component_names;
 
     template<class, size_t>
     struct value;
@@ -184,17 +171,6 @@ namespace traits
     template<class L, class R, bool Strict_ordering>
     inline constexpr bool is_valid_operation_v = is_valid_operation<L, R, Strict_ordering>::value;
 
-    /// @var has_named_components_v
-    /// @brief Determines if a vector value has named vector components
-    template<class>
-    struct has_named_components : std::false_type {};
-
-    template<class Scalar, size_t Size>
-    struct has_named_components<detail::value<Scalar, Size>> : std::is_base_of<detail::component_names<Scalar, Size, true>, detail::value<Scalar, Size>> {};
-    
-    template<class Expr>
-    inline constexpr bool has_named_components_v = has_named_components<Expr>::value;
-    
     /// @var has_converter_v
     /// @brief Determines if a there is a converter specilization defined between two types
     template<class, class, class = void>
@@ -543,15 +519,15 @@ namespace detail
     private:
         using base = expression<operation>;
     public:
-        /// @brief The scalar result type of the operation
-        using typename base::scalar_t;
+        /// @brief The scalar type of the value
+        using scalar_t = typename base::scalar_t;
+
+        /// @brief The vector size of the value
+        constexpr static size_t size = base::size;
 
         /// @brief The vector result type of the operation
-        using typename base::vector_t;
+        using vector_t = typename base::vector_t;
 
-        /// @brief The size of the vectors in the operation
-        using base::size;
-        
         /// @brief Constructs a vector operation from a function and operands
         constexpr operation(const Op_fn op, const Operands&... args) noexcept : _op(op), _operands(args...) {}
 
@@ -590,74 +566,100 @@ namespace detail
         const std::tuple<const Operands&...> _operands;
     };
     
-    /// @defgroup ComponentNames
-    /// @brief These specializations provide the named vector components to vector values
-    ///        (e.g. vector.x, vector.y).
-    /// @details Each component is a reference to the value at its associated index in the
-    ///          `value::data` array
-    template<class Scalar, size_t Size, bool = !DD_DISABLE_NAMES>
-    struct component_names
+    /// @defgroup ValueData
+    /// @brief Defines the vector value data
+    /// @details The data is stored as a `Scalar data[Size]` array. There are also specializations
+    ///          defined to add named components, mapped to each index in the data array. This is 
+    ///          done through anonymous structs which is technically non-ISO C++. If a compiler
+    ///          which does not support anonymous structs is used, these specializations should get
+    ///          SFINAE'd out and the default case is used
+
+    /// @ingroup ValueData
+    /// @brief Default case: only contains a `Scalar data[Size]` array
+    template<class Scalar, size_t Size>
+    struct value_data
     {
-        constexpr component_names(Scalar*) noexcept {}
+        Scalar data[Size];
+    protected:
+        template<class... Scalars>
+        constexpr value_data(Scalars... scalars) noexcept : data{ scalars... } {}
     };
 
-    /// @ingroup ComponentNames
+    /// @ingroup ValueData
+    /// @brief Specialization for 2D vectors: adds components `x`, `y`
     template<class Scalar>
-    struct component_names<Scalar, 2, true>
+    struct value_data<Scalar, 2>
     {
-        /// @brief The `X` component
-        Scalar& x;
+        union
+        {
+            Scalar data[2];
 
-        /// @brief The `Y` component
-        Scalar& y;
-
-        constexpr component_names(Scalar data[2]) noexcept : x(data[0]), y(data[1]) {}
-        constexpr component_names& operator=(const component_names&) noexcept { return *this; }
+            struct
+            {
+                Scalar x, y;
+            };
+        };
+    protected:
+        template<class... Scalars>
+        constexpr value_data(Scalars... scalars) noexcept : data{ scalars... } {}
     };
 
-    /// @ingroup ComponentNames
+    /// @ingroup ValueData
+    /// @brief Specialization for 3D vectors: adds components `x`, `y`, `z`
     template<class Scalar>
-    struct component_names<Scalar, 3, true> : component_names<Scalar, 2>
+    struct value_data<Scalar, 3>
     {
-        /// @brief The `Z` component
-        Scalar& z;
+        union
+        {
+            Scalar data[3];
 
-        constexpr component_names(Scalar data[3]) noexcept : component_names<Scalar, 2>(data), z(data[2]) {}
-        constexpr component_names& operator=(const component_names&) noexcept { return *this; }
+            struct
+            {
+                Scalar x, y, z;
+            };
+        };
+    protected:
+        template<class... Scalars>
+        constexpr value_data(Scalars... scalars) noexcept : data{ scalars... } {}
     };
 
-    /// @ingroup ComponentNames
+    /// @ingroup ValueData
+    /// @brief Specialization for 3D vectors: adds components `x`, `y`, `z`, `w`
     template<class Scalar>
-    struct component_names<Scalar, 4, true> : component_names<Scalar, 3>
+    struct value_data<Scalar, 4>
     {
-        /// @brief The `W` component
-        Scalar& w;
+        union
+        {
+            Scalar data[4];
 
-        constexpr component_names(Scalar data[4]) noexcept : component_names<Scalar, 3>(data), w(data[3]) {}
-        constexpr component_names& operator=(const component_names&) noexcept { return *this; }
+            struct
+            {
+                Scalar x, y, z, w;
+            };
+        };
+    protected:
+        template<class... Scalars>
+        constexpr value_data(Scalars... scalars) noexcept : data{ scalars... } {}
     };
-    
+
     /// @brief A vector expression containing a single vector value
     /// @param Scalar The scalar type of the vector
     /// @param Size The size of the vector
     template<class Scalar, size_t Size>
-    struct value : expression<value<Scalar, Size>>, component_names<Scalar, Size>
+    struct value : expression<value<Scalar, Size>>, value_data<Scalar, Size>
     {
         static_assert(std::is_arithmetic_v<Scalar> && (Size > 1), "Invalid vector scalar_t or size");
     private:
         using base = expression<value>;
-        using component_names = component_names<Scalar, Size>;
+        using value_data = value_data<Scalar, Size>;
+        using value_data::data;
     public:
         /// @brief The scalar type of the value
-        using typename base::scalar_t;
+        using scalar_t = typename base::scalar_t;
 
         /// @brief The vector size of the value
-        using base::size;
-              
-        /// @brief Houses the data for the vector value
-        scalar_t data[size];
+        constexpr static size_t size = base::size;
         
-#if !DD_DISABLE_PREFABS
         /// @defgroup Prefabs
         /// @brief Prefabricated vector values
 
@@ -668,38 +670,30 @@ namespace detail
         /// @ingroup Prefabs
         /// @brief Vector value filled with ones
         const static value identity;
-#endif
+
         /// @brief Default constructs the vector value
         /// @details All components will be initialized to 0
-        constexpr value() noexcept : component_names(data), data{} {}
+        constexpr value() = default;
 
         /// @brief Constructs a vector value from individual component values
         /// @details Expects as many arguments as the vector size and that each argument
         ///          is convertible to the vector scalar type
-        template<class... Scalars, class = std::enable_if_t<(sizeof...(Scalars) == Size) && (std::is_convertible_v<Scalars, scalar_t> && ...)>>
-        constexpr value(const Scalars&... scalars) noexcept : component_names(data), data{ (scalar_t)scalars... } {}
+        template<class... Scalars, class = std::enable_if_t<sizeof...(Scalars) == size && (std::is_convertible_v<Scalars, scalar_t> && ...)>>
+        constexpr value(const Scalars&... scalars) noexcept : value_data(static_cast<Scalar>(scalars)...) {}
 
         /// @brief Constructs a vector value from a single repeated value
         /// @details All components will be initialized to `scalar`
-        constexpr explicit value(const scalar_t scalar) noexcept : value()
+        constexpr explicit value(const scalar_t scalar) noexcept
         {
             for (size_t i = 0; i < size; i++)
                 data[i] = scalar;
-        }
-
-        /// @brief Copies component values from another vector value of the same type
-        /// @details This function is defined explicitly to ensure component_names is
-        ///          initialized properly
-        constexpr value(const value& other) noexcept : value()
-        {
-            assign(other);
         }
 
         /// @brief Copies component values from a different type
         /// @details Vector values are copied normally. Vector operations are evaluated and copied.
         ///          Foreign types with a converter specialization defined are converted and then copied.
         template<class Other, class = std::enable_if_t<traits::is_same_size_v<value, Other> || traits::has_converter_v<value, Other>>>
-        constexpr value(const Other& other) : value()
+        constexpr value(const Other& other)
         {
             if constexpr(traits::is_same_size_v<value, Other>)
                 assign(other);
@@ -770,13 +764,11 @@ namespace detail
 template<class Scalar, size_t Size>
 using vector = detail::value<Scalar, Size>;
 
-#if !DD_DISABLE_PREFABS
 template<class S, size_t N>
 const vector<S, N> vector<S, N>::zero(0);
 
 template<class S, size_t N>
 const vector<S, N> vector<S, N>::identity(1);
-#endif
 
 namespace types
 {
