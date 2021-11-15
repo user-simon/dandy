@@ -12,32 +12,32 @@
 #define _DD_NAMESPACE_OPEN namespace dd {
 #define _DD_NAMESPACE_CLOSE }
 #define _DD_OPERATION_T auto
-#define _DD_DEFINE_BINARY_OPERATOR(op)                                                              \
-    template<class L, class R, class = std::enable_if_t<traits::is_valid_operation_v<L, R, false>>> \
-    constexpr _DD_OPERATION_T operator op (const L& l, const R& r)                                  \
-    {                                                                                               \
-        return impl::operation                                                                      \
-        {                                                                                           \
-            [](const auto& a, const auto& b) { return a op b; },                                    \
-            l, r                                                                                    \
-        };                                                                                          \
-                                                                                                    \
-    }                                                                                               \
-    template<class L, class R, class = std::enable_if_t<traits::is_valid_operation_v<L, R, true>>>  \
-    constexpr _DD_OPERATION_T operator op##=(L& l, const R& r)                                      \
-    {                                                                                               \
-        return l = l op r;                                                                          \
+#define _DD_DEFINE_BINARY_OPERATOR(op)                                                         \
+    template<class L, class R, traits::require<traits::is_valid_operation_v<L, R, false>> = 1> \
+    constexpr _DD_OPERATION_T operator op (const L& l, const R& r)                             \
+    {                                                                                          \
+        return impl::operation                                                                 \
+        {                                                                                      \
+            [](const auto& a, const auto& b) { return a op b; },                               \
+            l, r                                                                               \
+        };                                                                                     \
+                                                                                               \
+    }                                                                                          \
+    template<class L, class R, traits::require<traits::is_valid_operation_v<L, R, true>> = 1>  \
+    constexpr _DD_OPERATION_T operator op##=(L& l, const R& r)                                 \
+    {                                                                                          \
+        return l = l op r;                                                                     \
     }
 
-#define _DD_DEFINE_UNARY_OPERATOR(op)                                             \
-    template<class Expr, class = std::enable_if_t<traits::is_expression_v<Expr>>> \
-    constexpr _DD_OPERATION_T operator op (const Expr& expr)                      \
-    {                                                                             \
-        return impl::operation                                                    \
-        {                                                                         \
-            [](const auto& v) { return op(v); },                                  \
-            expr                                                                  \
-        };                                                                        \
+#define _DD_DEFINE_UNARY_OPERATOR(op)                                        \
+    template<class Expr, traits::require<traits::is_expression_v<Expr>> = 1> \
+    constexpr _DD_OPERATION_T operator op (const Expr& expr)                 \
+    {                                                                        \
+        return impl::operation                                               \
+        {                                                                    \
+            [](const auto& v) { return op(v); },                             \
+            expr                                                             \
+        };                                                                   \
     }
 
 
@@ -71,12 +71,17 @@ struct converter;
 
 namespace traits
 {
-    /// @brief Helper metafunction to return template type unchanged
+    /// @brief Helper metafunction to return a template type unchanged
     template<class T>
     struct type_identity
     {
         using type = T;
     };
+
+    /// @brief Wrapper for `std::enable_if_t` with second parameter defaulted to `bool`
+    /// @details Renamed for brevity and to be more in line with C++20 syntax
+    template<bool Condition, class Ty = bool>
+    using require = std::enable_if_t<Condition, Ty>;
 
     /// @var is_value_v
     /// @brief Determines if a type is a vector value type
@@ -90,7 +95,7 @@ namespace traits
     inline constexpr bool is_value_v = is_value<T>::value;
 
     /// @var is_operation_v
-    /// @brief Determines if a type is a vector operation type
+    /// @brief Determines if a type is a vector operation
     template<class T>
     struct is_operation : std::false_type {};
 
@@ -101,7 +106,8 @@ namespace traits
     inline constexpr bool is_operation_v = is_operation<T>::value;
 
     /// @var is_expression_v
-    /// @brief Determines if a type is a vector operation type
+    /// @brief Determines if a type is a vector expression
+    /// @details Returns true iff a type is a value or an operation
     template<class T>
     struct is_expression : std::disjunction<is_value<T>, is_operation<T>> {};
 
@@ -109,51 +115,65 @@ namespace traits
     inline constexpr bool is_expression_v = is_expression<T>::value;
 
     /// @typedef scalar_t
-    /// @brief Gets the scalar type of the vector expression
-    /// @details For vector operations, this is set to the result type of the operation function
-    ///          when called with the operation operands
+    /// @brief Gets the scalar type of a vector expression
+    /// @details 
+    ///  - *Values*: returns scalar type of the value
+    ///  - *Operations*: returns the resulting scalar type of the operation
     template<class Scalar>
-    struct scalar : type_identity<Scalar> {};
+    struct _scalar : type_identity<Scalar> {};
 
     template<class Op_fn, class... Operands>
-    struct scalar<impl::operation<Op_fn, Operands...>> : std::invoke_result<Op_fn, typename scalar<Operands>::type...> {};
+    struct _scalar<impl::operation<Op_fn, Operands...>> : std::invoke_result<Op_fn, typename _scalar<Operands>::type...> {};
 
     template<class Scalar, size_t Size>
-    struct scalar<impl::value<Scalar, Size>> : type_identity<Scalar> {};
+    struct _scalar<impl::value<Scalar, Size>> : type_identity<Scalar> {};
+
+    template<class Expr, require<is_expression_v<Expr>> = 1>
+    struct scalar : _scalar<Expr> {};
 
     template<class Expr>
     using scalar_t = typename scalar<Expr>::type;
 
     /// @var size_v
-    /// @brief Gets the size of the vector expression
-    /// @details For vector operations, this is set to the max size of its operands
+    /// @brief Gets the size of a vector expression
+    /// @details 
+    ///  - *Values*: returns size of the value
+    ///  - *Operations*: returns the greatest size of its operands
+    ///  - *Other*: undefined
     template<class>
-    struct size : std::integral_constant<size_t, 1> {};
+    struct _size : std::integral_constant<size_t, 1> {};
 
     template<class Op_fn, class... Operands>
-    struct size<impl::operation<Op_fn, Operands...>> : std::integral_constant<size_t, std::max({ size<Operands>::value... })> {};
+    struct _size<impl::operation<Op_fn, Operands...>> : std::integral_constant<size_t, std::max({ _size<Operands>::value... })> {};
 
     template<class Scalar, size_t Size>
-    struct size<impl::value<Scalar, Size>> : std::integral_constant<size_t, Size> {};
+    struct _size<impl::value<Scalar, Size>> : std::integral_constant<size_t, Size> {};
+
+    template<class Expr, require<is_expression_v<Expr>> = 1>
+    struct size : _size<Expr> {};
 
     template<class Expr>
     inline constexpr size_t size_v = size<Expr>::value;
     
     /// @typedef vector_t
-    /// @brief Gets the resulting vector type of the vector expression
-    template<class Expr, class = std::enable_if_t<is_expression_v<Expr>>>
-    struct _vector : type_identity<impl::value<scalar_t<Expr>, size_v<Expr>>> {};
-
+    /// @brief Gets the resulting vector type of a vector expression
+    /// @detail Behaviour undefined for non-expression types
     template<class Expr>
-    struct vector : _vector<Expr> {};
+    struct vector : type_identity<impl::value<scalar_t<Expr>, size_v<Expr>>> {};
 
     template<class Expr>
     using vector_t = typename vector<Expr>::type;
 
     /// @var is_same_size_v
     /// @brief Determines if two types are vector expressions of the same size
+    template<class T, class U, bool AreExpressions>
+    struct _is_same_size : std::false_type {};
+
     template<class T, class U>
-    struct is_same_size : std::conjunction<is_expression<T>, is_expression<U>, std::bool_constant<size_v<T> == size_v<U>>> {};
+    struct _is_same_size<T, U, true> : std::bool_constant<size_v<T> == size_v<U>> {};
+
+    template<class T, class U>
+    struct is_same_size : _is_same_size<T, U, is_expression_v<T> && is_expression_v<U>> {};
 
     template<class T, class U>
     inline constexpr bool is_same_size_v = is_same_size<T, U>::value;
@@ -203,7 +223,7 @@ namespace impl
     _DD_DEFINE_UNARY_OPERATOR(-);
     _DD_DEFINE_UNARY_OPERATOR(~);
 
-    template<class Expr1, class Expr2, class = std::enable_if_t<traits::is_same_size_v<Expr1, Expr2>>>
+    template<class Expr1, class Expr2, traits::require<traits::is_same_size_v<Expr1, Expr2>> = 1>
     constexpr inline bool operator==(const Expr1& expr1, const Expr2& expr2) noexcept
     {
         for (size_t i = 0; i < Expr1::size; i++)
@@ -214,7 +234,7 @@ namespace impl
         return true;
     }
 
-    template<class Expr1, class Expr2, class = std::enable_if_t<traits::is_same_size_v<Expr1, Expr2>>>
+    template<class Expr1, class Expr2, traits::require<traits::is_same_size_v<Expr1, Expr2>> = 1>
     constexpr inline bool operator!=(const Expr1& expr1, const Expr2& expr2) noexcept
     {
         for (size_t i = 0; i < Expr1::size; i++)
@@ -225,7 +245,7 @@ namespace impl
         return false;
     }
 
-    template<class Expr1, class Expr2, class = std::enable_if_t<traits::is_same_size_v<Expr1, Expr2>>>
+    template<class Expr1, class Expr2, traits::require<traits::is_same_size_v<Expr1, Expr2>> = 1>
     constexpr inline bool operator<(const Expr1& expr1, const Expr2& expr2) noexcept
     {
         for (size_t i = 0; i < Expr1::size; i++)
@@ -236,7 +256,7 @@ namespace impl
         return true;
     }
 
-    template<class Expr1, class Expr2, class = std::enable_if_t<traits::is_same_size_v<Expr1, Expr2>>>
+    template<class Expr1, class Expr2, traits::require<traits::is_same_size_v<Expr1, Expr2>> = 1>
     constexpr inline bool operator<=(const Expr1& expr1, const Expr2& expr2) noexcept
     {
         for (size_t i = 0; i < Expr1::size; i++)
@@ -247,13 +267,13 @@ namespace impl
         return true;
     }
 
-    template<class Expr1, class Expr2, class = std::enable_if_t<traits::is_same_size_v<Expr1, Expr2>>>
+    template<class Expr1, class Expr2, traits::require<traits::is_same_size_v<Expr1, Expr2>> = 1>
     constexpr bool operator>(const Expr1& expr1, const Expr2& expr2) noexcept
     {
         return expr2 < expr1;
     }
 
-    template<class Expr1, class Expr2, class = std::enable_if_t<traits::is_same_size_v<Expr1, Expr2>>>
+    template<class Expr1, class Expr2, traits::require<traits::is_same_size_v<Expr1, Expr2>> = 1>
     constexpr bool operator>=(const Expr1& expr1, const Expr2& expr2) noexcept
     {
         return expr2 <= expr1;
@@ -275,7 +295,7 @@ namespace impl
             return _child()[index];
         }
         
-        template<class Other, class = std::enable_if_t<traits::has_converter_v<vector_t, Other>>>
+        template<class Other, traits::require<traits::has_converter_v<vector_t, Other>> = 1>
         operator Other() const
         {
             Other other;
@@ -300,7 +320,7 @@ namespace impl
         }
 
         /// @brief Determines if at least one component is equal to a scalar value
-        template<class T, class = std::enable_if_t<std::is_arithmetic_v<T>>>
+        template<class T, traits::require<std::is_arithmetic_v<T>> = 1>
         constexpr bool contains(const T value) const noexcept
         {
             for (size_t i = 0; i < size; i++)
@@ -332,7 +352,7 @@ namespace impl
         }
 
         /// @brief Calculates the dot product with another vector expression
-        template<class Expr, class = std::enable_if_t<traits::is_same_size_v<Expr, Child>>>
+        template<class Expr, traits::require<traits::is_same_size_v<Expr, Child>> = 1>
         constexpr scalar_t dot(const Expr& expr) const noexcept
         {
             scalar_t out = 0;
@@ -357,7 +377,7 @@ namespace impl
         }
 
         /// @brief Calculates the Euclidian distance to another vector expression squared
-        template<class Expr, class = std::enable_if_t<traits::is_same_size_v<Expr, Child>>>
+        template<class Expr, traits::require<traits::is_same_size_v<Expr, Child>> = 1>
         constexpr scalar_t distance2(const Expr& expr) const noexcept
         {
             return (_child() - expr).length2();
@@ -365,7 +385,7 @@ namespace impl
 
         /// @brief Calculates the Euclidian distance to another vector expression
         /// @details Analagous to writing `std::sqrt(vector.distance2())`
-        template<class Expr, class = std::enable_if_t<traits::is_same_size_v<Expr, Child>>>
+        template<class Expr, traits::require<traits::is_same_size_v<Expr, Child>> = 1>
         constexpr double distance(const Expr& expr) const
         {
             return std::sqrt((double)distance2(expr));
@@ -386,14 +406,14 @@ namespace impl
         }
 
         /// @brief Calculates the delta angle to another vector expression
-        template<class Expr, class = std::enable_if_t<traits::is_same_size_v<Expr, Child>>>
+        template<class Expr, traits::require<traits::is_same_size_v<Expr, Child>> = 1>
         double delta_angle(const Expr& expr) const
         {
             return std::acos(dot(expr) / std::sqrt((double)length2() * expr.length2()));
         }
 
         /// @brief Creates an operation to apply a function to all components
-        template<class Fn, class = std::enable_if_t<std::is_invocable_v<Fn, scalar_t>>>
+        template<class Fn, traits::require<std::is_invocable_v<Fn, scalar_t>> = 1>
         constexpr _DD_OPERATION_T apply(const Fn& fn) const noexcept
         {
             return operation{ fn, _child() };
@@ -428,7 +448,7 @@ namespace impl
         }
 
         /// @brief Creates an operation to cast each component
-        template<class Scalar, class = std::enable_if_t<std::is_arithmetic_v<Scalar>>>
+        template<class Scalar, traits::require<std::is_arithmetic_v<Scalar>> = 1>
         constexpr _DD_OPERATION_T scalar_cast() const noexcept
         {
             return apply([](scalar_t v) { return static_cast<Scalar>(v); });
@@ -498,7 +518,7 @@ namespace impl
         using typename base::vector_t;
     public:
         /// @brief Calculates the cross product with another vector expression
-        template<class Expr, class = std::enable_if_t<traits::is_same_size_v<Expr, Child>>>
+        template<class Expr, traits::require<traits::is_same_size_v<Expr, Child>> = 1>
         constexpr vector_t cross(const Expr& expr) const noexcept
         {
             return
@@ -672,11 +692,8 @@ namespace impl
         /// @details All components will be initialized to 0
         constexpr value() = default;
 
-        /// @brief Constructs a vector value from individual component values
-        /// @details Expects as many arguments as the vector size and that each argument
-        ///          is convertible to the vector scalar type
-        template<class... Scalars, class = std::enable_if_t<sizeof...(Scalars) == size && (std::is_convertible_v<Scalars, scalar_t> && ...)>>
-        constexpr value(const Scalars&... scalars) noexcept : value_data(static_cast<Scalar>(scalars)...) {}
+        template<class... Scalars, traits::require<sizeof... (Scalars) == size && std::conjunction_v<std::is_convertible<Scalars, scalar_t>...>> = 1>
+        constexpr value(const Scalars&... scalars) noexcept : value_data(static_cast<scalar_t>(scalars)...) {}
 
         /// @brief Constructs a vector value from a single repeated value
         /// @details All components will be initialized to `scalar`
@@ -686,20 +703,23 @@ namespace impl
                 data[i] = scalar;
         }
 
-        /// @brief Copies component values from a different type
-        /// @details Vector values are copied normally. Vector operations are evaluated and copied.
-        ///          Foreign types with a converter specialization defined are converted and then copied.
-        template<class Other, class = std::enable_if_t<traits::is_same_size_v<value, Other> || traits::has_converter_v<value, Other>>>
+        /// @brief Copies component values from a different vector expression of the same size
+        template<class Other, traits::require<traits::is_same_size_v<value, Other>> = 1>
         constexpr value(const Other& other)
         {
-            if constexpr(traits::is_same_size_v<value, Other>)
-                assign(other);
-            else
-                converter<value, Other>::convert(other, *this);
+            assign(other);
+        }
+
+        /// @brief Create value from foreign type through converter
+        /// @details `Other` must have a converter specialization defined
+        template<class Other, traits::require<traits::has_converter_v<value, Other>> = 1>
+        constexpr value(const Other& other)
+        {
+            converter<value, Other>::convert(other, *this);
         }
 
         /// @brief Copy assignment operator
-        template<class Expr, class = std::enable_if_t<traits::is_same_size_v<value, Expr>>>
+        template<class Expr, traits::require<traits::is_same_size_v<value, Expr>> = 1>
         constexpr value& operator=(const Expr& expr)
         {
             return assign(expr);
@@ -719,7 +739,7 @@ namespace impl
 
         /// @brief Copies component values from another vector expression
         /// @details Vector values are copied normally. Vector operations are evaluated and copied.
-        template<class Expr, class = std::enable_if_t<traits::is_same_size_v<value, Expr>>>
+        template<class Expr, traits::require<traits::is_same_size_v<value, Expr>> = 1>
         constexpr value& assign(const Expr& expr) noexcept
         {
             for (size_t i = 0; i < size; i++)
@@ -814,7 +834,7 @@ namespace std
 {
     /// @brief Serializes vector expression to a `std::ostream`
     /// @details Allows for e.g. `std::cout << vector`
-    template<class Expr, class = std::enable_if_t<dd::traits::is_expression_v<Expr>>>
+    template<class Expr, dd::traits::require<dd::traits::is_expression_v<Expr>> = 1>
     std::ostream& operator<<(std::ostream& stream, const Expr& e)
     {
         return stream << e.to_string();
