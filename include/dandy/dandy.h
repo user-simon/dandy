@@ -715,6 +715,9 @@ namespace impl
         /// @details All components will be initialized to 0
         constexpr value() = default;
 
+        /// @brief Constructs a vector value from individual component values
+        /// @details Expects as many arguments as the vector size and that each argument
+        ///          is convertible to the vector scalar type
         template<class... Scalars, traits::require<sizeof... (Scalars) == size && std::conjunction_v<std::is_convertible<Scalars, scalar_t>...>> = 1>
         constexpr value(const Scalars&... scalars) noexcept : value_data(static_cast<scalar_t>(scalars)...) {}
 
