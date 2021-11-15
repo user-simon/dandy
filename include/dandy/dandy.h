@@ -79,92 +79,109 @@ namespace traits
     };
 
     /// @brief Wrapper for `std::enable_if_t` with second parameter defaulted to `bool`
-    /// @details Renamed for brevity and to be more in line with C++20 syntax
+    /// @details Renamed for brevity and to be closer to C++20 syntax
     template<bool Condition, class Ty = bool>
     using require = std::enable_if_t<Condition, Ty>;
 
-    /// @var is_value_v
+    /// @struct is_value
     /// @brief Determines if a type is a vector value type
     template<class T>
-    struct is_value : std::false_type {};
+    struct _is_value : std::false_type {};
 
     template<class Scalar, size_t Size>
-    struct is_value<impl::value<Scalar, Size>> : std::true_type {};
+    struct _is_value<impl::value<Scalar, Size>> : std::true_type {};
+    
+    template<class T>
+    struct is_value : _is_value<T> {};
 
     template<class T>
     inline constexpr bool is_value_v = is_value<T>::value;
-
-    /// @var is_operation_v
+    
+    /// @struct is_operation
     /// @brief Determines if a type is a vector operation
     template<class T>
-    struct is_operation : std::false_type {};
+    struct _is_operation : std::false_type {};
 
     template<class Op_fn, class... Operands>
-    struct is_operation<impl::operation<Op_fn, Operands...>> : std::true_type {};
+    struct _is_operation<impl::operation<Op_fn, Operands...>> : std::true_type {};
+
+    template<class T>
+    struct is_operation : _is_operation<T> {};
 
     template<class T>
     inline constexpr bool is_operation_v = is_operation<T>::value;
 
-    /// @var is_expression_v
+    /// @struct is_expression
     /// @brief Determines if a type is a vector expression
     /// @details Returns true iff a type is a value or an operation
     template<class T>
-    struct is_expression : std::disjunction<is_value<T>, is_operation<T>> {};
+    struct _is_expression : std::disjunction<is_value<T>, is_operation<T>> {};
+
+    template<class T>
+    struct is_expression : _is_expression<T> {};
 
     template<class T>
     inline constexpr bool is_expression_v = is_expression<T>::value;
 
-    /// @typedef scalar_t
+    /// @struct scalar
     /// @brief Gets the scalar type of a vector expression
     /// @details 
     ///  - *Values*: returns scalar type of the value
     ///  - *Operations*: returns the resulting scalar type of the operation
     template<class Scalar>
-    struct _scalar : type_identity<Scalar> {};
+    struct _scalar_impl : type_identity<Scalar> {};
 
     template<class Op_fn, class... Operands>
-    struct _scalar<impl::operation<Op_fn, Operands...>> : std::invoke_result<Op_fn, typename _scalar<Operands>::type...> {};
+    struct _scalar_impl<impl::operation<Op_fn, Operands...>> : std::invoke_result<Op_fn, typename _scalar_impl<Operands>::type...> {};
 
     template<class Scalar, size_t Size>
-    struct _scalar<impl::value<Scalar, Size>> : type_identity<Scalar> {};
+    struct _scalar_impl<impl::value<Scalar, Size>> : type_identity<Scalar> {};
 
     template<class Expr, require<is_expression_v<Expr>> = 1>
+    struct _scalar : _scalar_impl<Expr> {};
+
+    template<class Expr>
     struct scalar : _scalar<Expr> {};
 
     template<class Expr>
     using scalar_t = typename scalar<Expr>::type;
 
-    /// @var size_v
+    /// @struct size
     /// @brief Gets the size of a vector expression
     /// @details 
     ///  - *Values*: returns size of the value
     ///  - *Operations*: returns the greatest size of its operands
-    ///  - *Other*: undefined
     template<class>
-    struct _size : std::integral_constant<size_t, 1> {};
+    struct _size_impl : std::integral_constant<size_t, 1> {};
 
     template<class Op_fn, class... Operands>
-    struct _size<impl::operation<Op_fn, Operands...>> : std::integral_constant<size_t, std::max({ _size<Operands>::value... })> {};
+    struct _size_impl<impl::operation<Op_fn, Operands...>> : std::integral_constant<size_t, std::max({ _size_impl<Operands>::value... })> {};
 
     template<class Scalar, size_t Size>
-    struct _size<impl::value<Scalar, Size>> : std::integral_constant<size_t, Size> {};
+    struct _size_impl<impl::value<Scalar, Size>> : std::integral_constant<size_t, Size> {};
 
     template<class Expr, require<is_expression_v<Expr>> = 1>
+    struct _size : _size_impl<Expr> {};
+
+    template<class Expr>
     struct size : _size<Expr> {};
 
     template<class Expr>
     inline constexpr size_t size_v = size<Expr>::value;
     
-    /// @typedef vector_t
+    /// @struct vector
     /// @brief Gets the resulting vector type of a vector expression
     /// @detail Behaviour undefined for non-expression types
+    template<class Expr, require<is_expression_v<Expr>> = 1>
+    struct _vector : type_identity<impl::value<scalar_t<Expr>, size_v<Expr>>> {};
+
     template<class Expr>
-    struct vector : type_identity<impl::value<scalar_t<Expr>, size_v<Expr>>> {};
+    struct vector : _vector<Expr> {};
 
     template<class Expr>
     using vector_t = typename vector<Expr>::type;
 
-    /// @var is_same_size_v
+    /// @struct is_same_size
     /// @brief Determines if two types are vector expressions of the same size
     template<class T, class U, bool AreExpressions>
     struct _is_same_size : std::false_type {};
@@ -178,29 +195,35 @@ namespace traits
     template<class T, class U>
     inline constexpr bool is_same_size_v = is_same_size<T, U>::value;
 
-    /// @var is_valid_operation_v
+    /// @struct is_valid_operation
     /// @brief Determines if two types form a valid vector operation
     /// @param Strict_ordering A value of true forbids a scalar type from appearing first in
     ///                        the operation
     template<class L, class R, bool Strict_ordering>
-    struct is_valid_operation
+    struct _is_valid_operation
         : std::bool_constant<(is_same_size_v<L, R>)                                               ||
                              (is_expression_v<L> && std::is_arithmetic_v<R>)                      ||
                              (std::is_arithmetic_v<L> && is_expression_v<R> && !Strict_ordering)> {};
     
     template<class L, class R, bool Strict_ordering>
+    struct is_valid_operation : _is_valid_operation<L, R, Strict_ordering> {};
+
+    template<class L, class R, bool Strict_ordering>
     inline constexpr bool is_valid_operation_v = is_valid_operation<L, R, Strict_ordering>::value;
 
-    /// @var has_converter_v
+    /// @struct has_converter
     /// @brief Determines if a there is a converter specilization defined between two types
     template<class, class, class = void>
-    struct has_converter : std::false_type {};
+    struct _has_converter : std::false_type {};
 
     template<class T, class U>
-    struct has_converter<T, U, std::void_t<decltype(
+    struct _has_converter<T, U, std::void_t<decltype(
         converter<T, U>::convert(std::declval<T>(), std::declval<U&>()), // has T -> U
         converter<T, U>::convert(std::declval<U>(), std::declval<T&>())  // has U -> T
     )>> : std::true_type {};
+
+    template<class T, class U>
+    struct has_converter : _has_converter<T, U> {};
 
     template<class T, class U>
     inline constexpr bool has_converter_v = has_converter<T, U>::value;
@@ -603,7 +626,7 @@ namespace impl
     };
 
     /// @ingroup ValueData
-    /// @brief Specialization for 2D vectors: adds components `x`, `y`
+    /// @brief Specialization for 2D vectors: adds component names `x`, `y`
     template<class Scalar>
     struct value_data<Scalar, 2>
     {
@@ -622,7 +645,7 @@ namespace impl
     };
 
     /// @ingroup ValueData
-    /// @brief Specialization for 3D vectors: adds components `x`, `y`, `z`
+    /// @brief Specialization for 3D vectors: adds component names `x`, `y`, `z`
     template<class Scalar>
     struct value_data<Scalar, 3>
     {
@@ -641,7 +664,7 @@ namespace impl
     };
 
     /// @ingroup ValueData
-    /// @brief Specialization for 4D vectors: adds components `x`, `y`, `z`, `w`
+    /// @brief Specialization for 4D vectors: adds component names `x`, `y`, `z`, `w`
     template<class Scalar>
     struct value_data<Scalar, 4>
     {
