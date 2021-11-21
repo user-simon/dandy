@@ -10,12 +10,18 @@ using operation_t = decltype(std::declval<vector<T, Size>>() + std::declval<vect
 template<class Scalar>
 inline Scalar random_scalar()
 {
-    //static std::random_device _device;
     static std::mt19937 rng = std::mt19937(std::random_device()());
-    static std::uniform_int_distribution<std::mt19937::result_type> dist;
-    auto scalar = dist(rng);
 
-    return *(Scalar*)&scalar;
+    if constexpr(std::is_floating_point_v<Scalar>)
+    {
+        static std::uniform_real_distribution<double> dist;
+        return static_cast<Scalar>(dist(rng));
+    }
+    else
+    {
+        static std::uniform_int_distribution<uint64_t> dist;
+        return static_cast<Scalar>(dist(rng));
+    }
 }
 
 template<class Vector>

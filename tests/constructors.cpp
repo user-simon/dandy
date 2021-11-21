@@ -52,8 +52,8 @@ TYPED_TEST(ConstructorsAll, Repeated)
 
 TEST(Constructors, ComponentNames)
 {
-    int2d a { 1, 2 };
-    int2d b { 3, 4 };
+    int2d a { 1.0, 2 };
+    int2d b { 3.0, 4 };
 
     // make sure components get bound to correct data
     EXPECT_EQ(a.x, 1);

@@ -4,14 +4,6 @@ template<class T>
 struct MathAll : testing::Test {};
 TYPED_TEST_SUITE(MathAll, all_vectors);
 
-template<class T>
-struct MathSigned : testing::Test {};
-TYPED_TEST_SUITE(MathSigned, signed_vectors);
-
-template<class T>
-struct MathFloating : testing::Test {};
-TYPED_TEST_SUITE(MathFloating, floating_vectors);
-
 TYPED_TEST(MathAll, Expressions)
 {
     USING_TYPE_INFO
@@ -23,10 +15,10 @@ TYPED_TEST(MathAll, Expressions)
     auto d = *(1 + -(a + b) * c * 0.5);
 
     EXPECT_EQ(decltype(d)::size, size);
-    testing::StaticAssertTypeEq<decltype(d)::scalar_t, double>();
+    testing::StaticAssertTypeEq<typename decltype(d)::scalar_t, double>();
 
     for (size_t i = 0; i < size; i++)
-        EXPECT_EQ(1 - (a[i] + b[i]) * c[i] * 0.5, d[i]);
+        EXPECT_EQ(1 + -(a[i] + b[i]) * c[i] * 0.5, d[i]);
 }
 
 TYPED_TEST(MathAll, Util)
@@ -53,24 +45,6 @@ TYPED_TEST(MathAll, Util)
     EXPECT_NE(a.product(), 0);
 }
 
-TYPED_TEST(MathSigned, Algebra)
-{
-    USING_TYPE_INFO
-
-    vector_t a = random_vector<vector_t>();
-    a[0] = -1;
-
-    vector_t b = a.abs();
-
-    for (size_t i = 0; i < size; i++)
-        EXPECT_EQ(b[i], std::abs(a[i]));
-}
-
-TYPED_TEST(MathFloating, Algebra)
-{
-    
-}
-
 TYPED_TEST(MathAll, LinearAlgebra)
 {
     USING_TYPE_INFO
@@ -79,4 +53,42 @@ TYPED_TEST(MathAll, LinearAlgebra)
     auto b = vector_t::identity;
 
     EXPECT_EQ(a.distance2(b), size);
+}
+
+TEST(Math, Length)
+{
+    uint2d a(1, 1);
+    int2d b(-5, -5);
+
+    EXPECT_DOUBLE_EQ(a.length(), std::sqrt(2));
+    EXPECT_DOUBLE_EQ(a.distance(b), uint2d(6, 6).length());
+    EXPECT_DOUBLE_EQ(a.normalize().length(), 1);
+    EXPECT_DOUBLE_EQ(b.set_length(100).length(), 100);
+}
+
+TEST(Math, LinearAlgebra)
+{
+    double2d a(1, 0);
+    double2d b(0, 1);
+
+    // angles
+    EXPECT_DOUBLE_EQ(std::cos(a.angle()), 1);
+    EXPECT_DOUBLE_EQ(std::sin(a.angle()), 0);
+    EXPECT_DOUBLE_EQ(a.delta_angle(b), b.angle());
+
+    // dot p
+    EXPECT_DOUBLE_EQ(a.dot(b), 0);
+
+    double2d c(1.2, 3.4);
+    double2d d(5.6, 7.8);
+    EXPECT_DOUBLE_EQ(c.dot(d), 1.2 * 5.6 + 3.4 * 7.8);
+
+    // cross p
+    int3d e(1, 2, 3);
+    int3d f(4, 5, 6);
+
+    EXPECT_EQ(e.cross(f), int3d(-3, 6, -3));
+
+    // from angle
+    EXPECT_EQ(double2d::from_angle(a.angle()), a);
 }
