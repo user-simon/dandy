@@ -6,17 +6,17 @@ use of expression templates for compile-time expression parsing -- as such,
 operations can be performed on complex vector expressions without the need for
 intermediary vector allocations.
 
+.. _vector-aliases:
+
 Vector types
 ------------
 
 .. doxygentypedef:: vector
 
-For convenience, the following aliases for the vector type have been defined and can be accessed
-either under the ``dd`` namespace or in the global namespace by adding ``using namespace dd::types``
-to your source (note that this does not leak any additional symbols).
-
 .. doxygennamespace:: types
-    :outline:
+    :members:
+
+.. note:: Throughout this documentation, a "vector value" will refer to any of the types defined above
 
 Construction
 ------------
@@ -91,8 +91,8 @@ Expression templates
 
 .. note::
     
-    Throughout this documentation for the sake of brevity, ``vector`` or ``vector expression`` can refer
-    to either a vector value (:cpp:struct:`detail::value`) or a vector operation (:cpp:struct:`detail::operation`) 
+    Throughout this documentation, ``vector expression`` refers to an instance of either a vector value
+    (:cpp:struct:`impl::value`) or a vector operation (:cpp:struct:`impl::operation`) 
 
 Operator overloads
 ------------------
@@ -101,64 +101,81 @@ Operator overloads
     - All operators require the argument vector expressions (if more than one) to be of the same size
     - All operators evaluate the expressions component-wise
 
-- The binary operators ``+``, ``-``, ``*``, ``/``, ``%``, ``&``, ``|``, ``^``, ``>>``, ``<<``, and their respective assignment counterparts are all overloaded for expressions of the pattern:
+- All binary arithmetic operators (``+``, ``-``, ``*``, ``/``, ``%``, ``&``, ``|``, ``^``, ``>>``, ``<<``), including their corresponding assignment operators,
+  are overloaded for expressions of the pattern:
 
-  .. code-block:: C
-  
-      [vector expression] [operator] [vector expression]
-      [vector expression] [operator] [scalar]
+    .. code-block:: C
 
-- All binary operators except the assignment operators are overloaded for expressions of the pattern:
+        [vector expression] [operator] [vector expression]
+        [vector expression] [operator] [scalar]
+
+- All binary arithmetic operators, exluding their corresponding assignment operators, are overloaded for expressions of the pattern:
 
   .. code-block:: C
   
       [scalar] [operator] [vector expression]
-  
+
 - The unary operators ``+``, ``-``, and ``~`` are overloaded for all vector expressions
-- Is `EqualityComparable <https://en.cppreference.com/w/cpp/named_req/EqualityComparable>`_:
+- Is `EqualityComparable <https://en.cppreference.com/w/cpp/named_req/EqualityComparable>`_: Two vectors are equal if all components are equal
 
   .. code-block:: C
   
-      float3d a { 1, 2, 3 };
-      float3d b = a;
-      float3d c { 4, 5, 6 };
+    float3d a { 1, 2, 3 };
+    float3d b = a;
+    float3d c { 4, 5, 6 };
+    
+    assert(a == b);
+    assert(a != (b + c));
   
-      assert(a == b);
-      assert(a != (b + c));
+- Is `LessThanComparable <https://en.cppreference.com/w/cpp/named_req/LessThanComparable>`_: A vector ``a`` is "lesser than" a vector ``b`` if
+  all components in ``a`` are lesser than the corresponding components in ``b``
   
+  .. note:: ``!(a < b)`` does not imply that ``a >= b``
+
+  .. code-block:: C
+
+    int2d a { 1, 2 };
+    int2d b { 2, 3 };
+
+    assert(a < b);
+
+    a.x = 2;
+
+    assert_false(a < b); // since a.x >= b.x
+
 - Is **explicitly** convertable to a bool:
 
   .. code-block:: C
   
-      if (double2d{ 3, 4 })
-          std::cout << "This will run";
-      if (double2d::zero)
-          std::cout << "This will not";
-          
-      // NOTE: explicit cast required
-      bool is_nonzero = (bool)double2d{ 1, 0 }; // is_nonzero will be true
+    if (double2d{ 3, 4 })
+        std::cout << "This will run";
+    if (double2d::zero)
+        std::cout << "This will not";
+        
+    // explicit cast required
+    bool is_nonzero = (bool)double2d{ 1, 0 }; // is_nonzero is true
 
 Indexing
 --------
 
-- Components in all vector expressions can be retrieved either with :cpp:func:`detail::expression_base::at`:
+- Components in all vector expressions can be retrieved either with :cpp:func:`impl::expression_base::at`:
 
   .. code-block:: C
 
-      float3d v { 1, 2, 3 };
-      float x = v.at(0); // x is 1
-      float y = v.at(1); // y is 2
+    float3d v { 1, 2, 3 };
+    float x = v.at(0); // x is 1
+    float y = v.at(1); // y is 2
 
   Or with the index operators:
 
   .. code-block:: C
   
-      float3d v { 1, 2, 3 };
-      float x = v[0]; // x is 1
-      float y = v[1]; // y is 2
+    float3d v { 1, 2, 3 };
+    float x = v[0]; // x is 1
+    float y = v[1]; // y is 2
 
 
-- :doc:`By default <disable_names>`, components in a vector value can also be accessed by name:
+- :doc:`If a compatible compiler is used <components>`, components in a vector value can also be accessed by name:
   
   .. code-block:: C
 
@@ -174,3 +191,5 @@ Indexing
   
     for (double v : double3d{ 1, 2, 3 })
         sum += v;
+
+    // sum is 6
