@@ -14,7 +14,7 @@
 #define _DD_OPERATION_T auto
 #define _DD_DEFINE_BINARY_OPERATOR(op)                                                         \
     template<class L, class R, traits::require<traits::is_valid_operation_v<L, R, false>> = 1> \
-    constexpr _DD_OPERATION_T operator op (const L& l, const R& r)                             \
+    inline constexpr _DD_OPERATION_T operator op (const L& l, const R& r)                      \
     {                                                                                          \
         return impl::operation                                                                 \
         {                                                                                      \
@@ -24,14 +24,14 @@
                                                                                                \
     }                                                                                          \
     template<class L, class R, traits::require<traits::is_valid_operation_v<L, R, true>> = 1>  \
-    constexpr _DD_OPERATION_T operator op##=(L& l, const R& r)                                 \
+    inline constexpr _DD_OPERATION_T operator op##=(L& l, const R& r)                          \
     {                                                                                          \
         return l = l op r;                                                                     \
     }
 
 #define _DD_DEFINE_UNARY_OPERATOR(op)                                        \
     template<class Expr, traits::require<traits::is_expression_v<Expr>> = 1> \
-    constexpr _DD_OPERATION_T operator op (const Expr& expr)                 \
+    inline constexpr _DD_OPERATION_T operator op (const Expr& expr)          \
     {                                                                        \
         return impl::operation                                               \
         {                                                                    \
@@ -212,7 +212,7 @@ namespace traits
     inline constexpr bool is_valid_operation_v = is_valid_operation<L, R, Strict_ordering>::value;
 
     /// @struct has_converter
-    /// @brief Determines if a there is a converter specilization defined between two types
+    /// @brief Determines if there is a converter specilization defined between two types
     template<class, class, class = void>
     struct _has_converter : std::false_type {};
 
@@ -247,7 +247,7 @@ namespace impl
     _DD_DEFINE_UNARY_OPERATOR(~);
 
     template<class Expr1, class Expr2, traits::require<traits::is_same_size_v<Expr1, Expr2>> = 1>
-    constexpr inline bool operator==(const Expr1& expr1, const Expr2& expr2) noexcept
+    inline constexpr bool operator==(const Expr1& expr1, const Expr2& expr2) noexcept
     {
         for (size_t i = 0; i < Expr1::size; i++)
         {
@@ -258,7 +258,7 @@ namespace impl
     }
 
     template<class Expr1, class Expr2, traits::require<traits::is_same_size_v<Expr1, Expr2>> = 1>
-    constexpr inline bool operator!=(const Expr1& expr1, const Expr2& expr2) noexcept
+    inline constexpr bool operator!=(const Expr1& expr1, const Expr2& expr2) noexcept
     {
         for (size_t i = 0; i < Expr1::size; i++)
         {
@@ -269,7 +269,7 @@ namespace impl
     }
 
     template<class Expr1, class Expr2, traits::require<traits::is_same_size_v<Expr1, Expr2>> = 1>
-    constexpr inline bool operator<(const Expr1& expr1, const Expr2& expr2) noexcept
+    inline constexpr bool operator<(const Expr1& expr1, const Expr2& expr2) noexcept
     {
         for (size_t i = 0; i < Expr1::size; i++)
         {
@@ -280,7 +280,7 @@ namespace impl
     }
 
     template<class Expr1, class Expr2, traits::require<traits::is_same_size_v<Expr1, Expr2>> = 1>
-    constexpr inline bool operator<=(const Expr1& expr1, const Expr2& expr2) noexcept
+    inline constexpr bool operator<=(const Expr1& expr1, const Expr2& expr2) noexcept
     {
         for (size_t i = 0; i < Expr1::size; i++)
         {
@@ -291,13 +291,13 @@ namespace impl
     }
 
     template<class Expr1, class Expr2, traits::require<traits::is_same_size_v<Expr1, Expr2>> = 1>
-    constexpr bool operator>(const Expr1& expr1, const Expr2& expr2) noexcept
+    inline constexpr bool operator>(const Expr1& expr1, const Expr2& expr2) noexcept
     {
         return expr2 < expr1;
     }
 
     template<class Expr1, class Expr2, traits::require<traits::is_same_size_v<Expr1, Expr2>> = 1>
-    constexpr bool operator>=(const Expr1& expr1, const Expr2& expr2) noexcept
+    inline constexpr bool operator>=(const Expr1& expr1, const Expr2& expr2) noexcept
     {
         return expr2 <= expr1;
     }
@@ -310,14 +310,8 @@ namespace impl
     protected:
         using scalar_t = traits::scalar_t<Child>;
         using vector_t = traits::vector_t<Child>;
-        constexpr static size_t size = traits::size_v<Child>;
+        static constexpr size_t size = traits::size_v<Child>;
     public:
-        ///  @brief Gets the component at specified index
-        constexpr scalar_t at(const size_t index) const
-        {
-            return _child()[index];
-        }
-        
         template<class Other, traits::require<traits::has_converter_v<vector_t, Other>> = 1>
         operator Other() const
         {
@@ -329,6 +323,12 @@ namespace impl
         constexpr explicit operator bool() const noexcept
         {
             return nonzero();
+        }
+
+        ///  @brief Gets the component at specified index
+        constexpr scalar_t at(const size_t index) const
+        {
+            return _child()[index];
         }
 
         /// @brief Determines if at least one component is non-zero
@@ -471,9 +471,10 @@ namespace impl
         }
 
         /// @brief Creates an operation to cast each component
-        template<class Scalar, traits::require<std::is_arithmetic_v<Scalar>> = 1>
+        template<class Scalar>
         constexpr _DD_OPERATION_T scalar_cast() const noexcept
         {
+            static_assert(std::is_arithmetic_v<Scalar>, "Cannot scalar cast vector to non-arithmetic type");
             return apply([](scalar_t v) { return static_cast<Scalar>(v); });
         }
 
@@ -692,8 +693,9 @@ namespace impl
     private:
         using base = expression<value>;
         using value_data = value_data<Scalar, Size>;
-        using value_data::data;
     public:
+        using value_data::data;
+        
         /// @brief The scalar type of the value
         using scalar_t = typename base::scalar_t;
 
@@ -874,8 +876,8 @@ namespace std
         {
             // interpret data as a string_view and use the string_view hasher
 
-            std::string_view byte_data = { static_cast<char*>(v.data), Size * sizeof(Scalar) };
-            std::hash<std::string_view> string_hash;
+            const std::string_view byte_data = { reinterpret_cast<const char*>(v.data), Size * sizeof(Scalar) };
+            const std::hash<std::string_view> string_hash;
             return string_hash(byte_data);
         }
     };
