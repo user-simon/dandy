@@ -21,6 +21,6 @@ dandy requires C++17 or newer and has been formally tested on MSVC and CLANG.
 
 Read the documentation [here](https://user-simon.github.io/dandy/).
 
-## Building
+## Building tests
 
 Use the provided [CMakeLists.txt](CMakeLists.txt) file to generate a project. Alternatively, if you're on Windows, you can use the provided [make_vs.bat](make_vs.bat) script to create the project under `./build`
